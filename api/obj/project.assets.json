@@ -5211,11 +5211,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\kevin\\OneDrive\\Documents\\GitHub\\APIMoviles\\api\\api.csproj",
+      "projectUniqueName": "C:\\Users\\kevin\\OneDrive\\Escritorio\\Cursos\\Moviles\\API\\Api\\API\\api\\api.csproj",
       "projectName": "api",
-      "projectPath": "C:\\Users\\kevin\\OneDrive\\Documents\\GitHub\\APIMoviles\\api\\api.csproj",
+      "projectPath": "C:\\Users\\kevin\\OneDrive\\Escritorio\\Cursos\\Moviles\\API\\Api\\API\\api\\api.csproj",
       "packagesPath": "C:\\Users\\kevin\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\kevin\\OneDrive\\Documents\\GitHub\\APIMoviles\\api\\obj\\",
+      "outputPath": "C:\\Users\\kevin\\OneDrive\\Escritorio\\Cursos\\Moviles\\API\\Api\\API\\api\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
