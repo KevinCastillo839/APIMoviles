@@ -16,6 +16,8 @@ namespace api.Data
     public DbSet<Menu> Menu { get; set; }
     public DbSet<Menu_Recipes> menu_recipes { get; set; }
     public DbSet<Recipe> Recipes { get; set; }
+    public DbSet<Ingredient> Ingredients { get; set; }
+
 
 
 
