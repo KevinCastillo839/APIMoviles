@@ -6,6 +6,7 @@ using api.Data;
 using api.Dtos.Ingredient;
 using api.Mappers;
 using api.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,6 +14,7 @@ namespace api.Controllers
 {
   [Route("api/ingredient")]
   [ApiController]
+  [Authorize] 
   public class IngredientController : ControllerBase
   {
     private readonly ApplicationDBContext _context;
