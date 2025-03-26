@@ -60,5 +60,47 @@ namespace api.Controllers
 
         return Ok(recipesDto);
     } 
+    [HttpGet("{id}")]
+public async Task<IActionResult> GetById(int id)
+{
+    var recipe = await _context.Recipes
+        .Include(r => r.Recipe_Ingredients)
+        .ThenInclude(ri => ri.Ingredient) // Incluye los detalles del ingrediente
+        .FirstOrDefaultAsync(r => r.id == id);
+
+    if (recipe == null)
+    {
+        return NotFound();
+    }
+
+    var recipeDto = new RecipeDto
+    {
+        id = recipe.id,
+        name = recipe.name,
+        instructions = recipe.instructions,
+        category = recipe.category,
+        preparation_time = recipe.preparation_time,
+        image_url = recipe.image_url,
+        created_at = recipe.created_at,
+        updated_at = recipe.updated_at,
+        Recipe_Ingredients = recipe.Recipe_Ingredients
+            .Select(ri => new RecipeIngredientDto
+            {
+                id = ri.id,
+                recipe_id = ri.recipe_id,
+                ingredient_id = ri.ingredient_id,
+                quantity = ri.quantity,
+                Ingredient = new IngredientDto
+                {
+                    id = ri.Ingredient.id,
+                    name = ri.Ingredient.name,
+                    description = ri.Ingredient.description
+                }
+            }).ToList()
+    };
+
+    return Ok(recipeDto);
+}
+
 }
 }
