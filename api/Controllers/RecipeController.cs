@@ -46,6 +46,7 @@ namespace api.Controllers
                 .Select(ri => new RecipeIngredientDto
                 {
                     id = ri.id,
+                    recipe_id = ri.recipe_id,
                     ingredient_id = ri.ingredient_id,
                     quantity = ri.quantity,
                     Ingredient = new IngredientDto
