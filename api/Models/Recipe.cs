@@ -15,5 +15,8 @@ namespace api.Models
         public string image_url { get; set; }
         public DateTime created_at { get; set; }
         public DateTime? updated_at { get; set; }
+        public List<Recipe_Ingredient> Recipe_Ingredients { get; set; } = new List<Recipe_Ingredient>();
+
+
     }
 }
