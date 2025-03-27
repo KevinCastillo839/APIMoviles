@@ -102,5 +102,46 @@ public async Task<IActionResult> GetById(int id)
     return Ok(recipeDto);
 }
 
+[HttpPost]
+public async Task<IActionResult> CreateRecipe([FromBody] CreateRecipeRequestDto request)
+{
+    if (request == null || request.Recipe_Ingredients == null || !request.Recipe_Ingredients.Any())
+    {
+        return BadRequest("La receta y sus ingredientes son requeridos.");
+    }
+
+        var recipe = new Recipe
+        {
+            name = request.name,
+            instructions = request.instructions,
+            category = request.category,
+            preparation_time = request.preparation_time,
+            image_url = request.image_url,
+            created_at = DateTime.UtcNow, // Asigna la fecha actual para evitar valores nulos
+            updated_at = DateTime.UtcNow
+        };
+
+
+    _context.Recipes.Add(recipe);
+    await _context.SaveChangesAsync();
+
+    // Inserta solo las relaciones con ingredientes existentes
+var recipeIngredients = request.Recipe_Ingredients.Select(ri => new Recipe_Ingredient
+{
+    recipe_id = recipe.id,
+    ingredient_id = ri.ingredient_id,
+    quantity = ri.quantity,
+    created_at = DateTime.UtcNow, // Agregar fechas
+    updated_at = DateTime.UtcNow
+}).ToList();
+
+
+    _context.Recipe_Ingredients.AddRange(recipeIngredients);
+    await _context.SaveChangesAsync();
+
+    return CreatedAtAction(nameof(GetById), new { id = recipe.id }, recipe);
+}
+
+
 }
 }
