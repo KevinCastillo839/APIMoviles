@@ -20,6 +20,7 @@ namespace api.Data
     public DbSet<User> Users { get; set; }
   
     public DbSet<Allergy> Allergies { get; set; }
+    public DbSet<Preference> user_preferences { get; set; }
 
 
 
