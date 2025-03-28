@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using api.Dtos.Auth;
 
 namespace api.Dtos.Preference
 {
@@ -15,6 +16,8 @@ namespace api.Dtos.Preference
         public string dietary_goals { get; set; }
         public DateTime created_at { get; set; }
         public DateTime? updated_at { get; set; }
+        public UserDto User { get; set; }
+        public List<UserAllergyDto> User_Allergies { get; set; } = new List<UserAllergyDto>();
         
     }
 }

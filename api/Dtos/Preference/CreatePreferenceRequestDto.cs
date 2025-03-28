@@ -15,7 +15,7 @@ namespace api.Dtos.Preference
         public string dietary_goals { get; set; }
         public DateTime created_at { get; set; }
         public DateTime? updated_at { get; set; }
-        
+        public List<CreateUserAllergyRequestDto> UserAllergy { get; set; } = new List<CreateUserAllergyRequestDto>();
     }
 
 }
