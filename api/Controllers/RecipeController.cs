@@ -165,14 +165,22 @@ namespace api.Controllers
         // Verifies if the model is valid
         if (!ModelState.IsValid)
         {
+<<<<<<< Updated upstream
             return BadRequest(ModelState); // Si no es válido, devuelve los errores de validación
+=======
+            return BadRequest(ModelState); // If it is not valid, return the validation errors.
+>>>>>>> Stashed changes
         }
 
         // Searches for the recipe in the database
         var recipe = await _context.Recipes.Include(r => r.Recipe_Ingredients).FirstOrDefaultAsync(r => r.id == id);
         if (recipe == null)
         {
+<<<<<<< Updated upstream
             return NotFound(new { message = "Receta no encontrada" }); // Si no existe, devuelve un mensaje de error
+=======
+            return NotFound(new { message = "Receta no encontrada" }); // If it does not exist, return an error message.
+>>>>>>> Stashed changes
         }
 
         // Updates the recipe data
@@ -222,4 +230,8 @@ namespace api.Controllers
         return NoContent();
     }
   }
+<<<<<<< Updated upstream
 }
+=======
+}
+>>>>>>> Stashed changes
