@@ -7,12 +7,8 @@ namespace api.Dtos.Recipe
 {
     public class CreateRecipeIngredientDto
     {
-        [Required(ErrorMessage = "El ID del ingrediente es obligatorio.")]
-        [Range(1, int.MaxValue, ErrorMessage = "El ID del ingrediente debe ser un número positivo.")]
         public int ingredient_id { get; set; }
 
-        [Required(ErrorMessage = "El ID de la receta es obligatorio.")]
-        [Range(1, int.MaxValue, ErrorMessage = "El ID de la receta debe ser un número positivo.")]
         public int recipe_id { get; set; }
 
         [Required(ErrorMessage = "La cantidad es obligatoria.")]
