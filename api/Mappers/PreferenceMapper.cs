@@ -5,7 +5,7 @@ namespace api.Mappers
 {
     public static class PreferenceMapper
     {
-        // Mapear de Preference a PreferenceDto
+        //Map from Preference to PreferenceDto
         public static PreferenceDto ToDto(this Preference preference)
         {
             return new PreferenceDto
@@ -21,7 +21,7 @@ namespace api.Mappers
             };
         }
 
-        // Mapear de CreatePreferenceRequestDto a Preference
+        //Map from CreatePreferenceRequestDto to Preference
         public static Preference ToPreferenceFromCreateDto(this CreatePreferenceRequestDto createPreferenceRequest)
         {
             return new Preference
@@ -35,8 +35,8 @@ namespace api.Mappers
                 updated_at = createPreferenceRequest.updated_at
             };
         }
-
-        // Mapear de UpdatePreferenceRequestDto a Preference
+  
+        // Map from UpdatePreferenceRequestDto to Preference
         public static Preference ToPreferenceFromUpdateDto(this UpdatePreferenceRequestDto updatePreferenceRequest, Preference existingPreference)
         {
             existingPreference.user_id = updatePreferenceRequest.user_id;
