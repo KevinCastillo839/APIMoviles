@@ -9,12 +9,14 @@ using api.Dtos.Preference;
 using api.Mappers;
 using api.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 
 namespace api.Controllers
 {
     [Route("api/preference")]
     [ApiController]
+    [Authorize] 
     public class PreferenceController : ControllerBase
     {
         private readonly ApplicationDBContext _context;
