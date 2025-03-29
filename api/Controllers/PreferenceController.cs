@@ -26,88 +26,121 @@ namespace api.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            var preference = await _context.user_preferences
-                .Include(p => p.User) // Incluye la relación con el Usuario
-                .Include(p => p.User_Allergies)
-                .ThenInclude(pa=>pa.Allergy)
-                .ToListAsync();
-            
-            var preferenceDto = preference.Select(preferences => new PreferenceDto
+            try
             {
-                id = preferences.id,
-                user_id = preferences.user_id,
-                is_vegan = preferences.is_vegan,
-                is_gluten_free = preferences.is_gluten_free,
-                is_vegetarian = preferences.is_vegetarian,
-                dietary_goals = preferences.dietary_goals,
-                created_at = preferences.created_at,
-                updated_at = preferences.updated_at,
-                User = new UserDto // Convierte la entidad User a un DTO
-                {
-                    id = preferences.User.id,
-                    full_name=preferences.User.full_name
-                    // Agrega otros campos del usuario según sea necesario
-                },
-                User_Allergies = preferences.User_Allergies
-                     .Where(pa=> pa.user_preferences_id == preferences.id)
-                     .Select(pa=> new UserAllergyDto
-                     {
-                        id = pa.id,
-                        user_preferences_id = pa.user_preferences_id,
-                        allergie_id = pa.allergy_id,
-                        Allergy = new Dtos.Allergy.AllergyDto
-                        {
-                            id = pa.Allergy.id,
-                            name = pa.Allergy.name,
-                            description = pa.Allergy.description
-                        }
-                     }).ToList()
-            }).ToList();
+                // Retrieve preferences including related entities
+                var preferences = await _context.user_preferences
+                    .Include(p => p.User) // Include the relationship with User
+                    .Include(p => p.User_Allergies)
+                    .ThenInclude(pa => pa.Allergy)
+                    .ToListAsync();
 
-             return Ok(preferenceDto);
+                if (preferences == null || !preferences.Any())
+                {
+                    return NotFound("No se encontraron preferencias en la base de datos.");
+                }
+
+                // Map preferences to DTOs
+                var preferenceDto = preferences.Select(preferences => new PreferenceDto
+                {
+                    id = preferences.id,
+                    user_id = preferences.user_id,
+                    is_vegan = preferences.is_vegan,
+                    is_gluten_free = preferences.is_gluten_free,
+                    is_vegetarian = preferences.is_vegetarian,
+                    dietary_goals = preferences.dietary_goals,
+                    created_at = preferences.created_at,
+                    updated_at = preferences.updated_at,
+                    User = new UserDto // Convert User entity to DTO
+                    {
+                        id = preferences.User.id,
+                        full_name = preferences.User.full_name
+                    },
+                    User_Allergies = preferences.User_Allergies
+                        .Where(pa => pa.user_preferences_id == preferences.id)
+                        .Select(pa => new UserAllergyDto
+                        {
+                            id = pa.id,
+                            user_preferences_id = pa.user_preferences_id,
+                            allergie_id = pa.allergy_id,
+                            Allergy = new Dtos.Allergy.AllergyDto
+                            {
+                                id = pa.Allergy.id,
+                                name = pa.Allergy.name,
+                                description = pa.Allergy.description
+                            }
+                        }).ToList()
+                }).ToList();
+
+                return Ok(preferenceDto);
+            }
+            catch (Exception ex)
+            {
+                // Return a 500 status code with error details in case of an exception
+                return StatusCode(500, $"Ocurrió un error al obtener las preferencias: {ex.Message}");
+            }
         }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById([FromRoute] int id)
         {
-            // Cargar las preferencias junto con las alergias relacionadas y la información de las alergias
-            var preference = await _context.user_preferences
-                .Include(p => p.User_Allergies)
-                .ThenInclude(pa => pa.Allergy)
-                .FirstOrDefaultAsync(p => p.id == id);
-
-            if (preference == null)
+            if (id <= 0)
             {
-                return NotFound();
+                return BadRequest("El ID proporcionado no es válido.");
             }
 
-            // Mapear el modelo a un DTO
-            var preferenceDto = new PreferenceDto
+            try
             {
-                id = preference.id,
-                user_id = preference.user_id,
-                is_vegan = preference.is_vegan,
-                is_gluten_free = preference.is_gluten_free,
-                is_vegetarian = preference.is_vegetarian,
-                dietary_goals = preference.dietary_goals,
-                created_at = preference.created_at,
-                updated_at = preference.updated_at,
-                User_Allergies = preference.User_Allergies
-                    .Select(pa => new UserAllergyDto
-                    {
-                        id = pa.id,
-                        user_preferences_id = pa.user_preferences_id,
-                        allergie_id = pa.allergy_id,
-                        Allergy = new Dtos.Allergy.AllergyDto
-                        {
-                            id = pa.Allergy.id,
-                            name = pa.Allergy.name,
-                            description = pa.Allergy.description
-                        }
-                    }).ToList()
-            };
+                // Load preferences along with related allergies and allergy details
+                var preference = await _context.user_preferences
+                    .Include(p => p.User) // Include the relationship with User
+                    .Include(p => p.User_Allergies)
+                    .ThenInclude(pa => pa.Allergy)
+                    .FirstOrDefaultAsync(p => p.id == id);
 
-            return Ok(preferenceDto);
+                if (preference == null)
+                {
+                    return NotFound("No se encontró la preferencia solicitada.");
+                }
+
+                // Map the model to a DTO
+                var preferenceDto = new PreferenceDto
+                {
+                    id = preference.id,
+                    user_id = preference.user_id,
+                    is_vegan = preference.is_vegan,
+                    is_gluten_free = preference.is_gluten_free,
+                    is_vegetarian = preference.is_vegetarian,
+                    dietary_goals = preference.dietary_goals,
+                    created_at = preference.created_at,
+                    updated_at = preference.updated_at,
+                    User = new UserDto // Convert User entity to DTO
+                    {
+                        id = preference.User.id,
+                        full_name = preference.User.full_name
+                    },
+                    User_Allergies = preference.User_Allergies
+                        .Select(pa => new UserAllergyDto
+                        {
+                            id = pa.id,
+                            user_preferences_id = pa.user_preferences_id,
+                            allergie_id = pa.allergy_id,
+                            Allergy = new Dtos.Allergy.AllergyDto
+                            {
+                                id = pa.Allergy.id,
+                                name = pa.Allergy.name,
+                                description = pa.Allergy.description
+                            }
+                        }).ToList()
+                };
+
+                return Ok(preferenceDto);
+            }
+            catch (Exception ex)
+            {
+                // Return a 500 status code with error details in case of an exception
+                return StatusCode(500, $"Ocurrió un error al obtener la preferencia: {ex.Message}");
+            }
         }
 
         [HttpPost]
@@ -117,7 +150,22 @@ namespace api.Controllers
             {
                 return BadRequest("Faltan datos en la solicitud.");
             }
+            // Validate required fields
+            if (request.user_id <= 0)
+            {
+                return BadRequest("El ID del usuario es obligatorio y debe ser válido.");
+            }
 
+            // Check if the user already has a preference
+            var existingPreference = await _context.user_preferences
+                .FirstOrDefaultAsync(p => p.user_id == request.user_id);
+
+            if (existingPreference != null)
+            {
+                return BadRequest("El usuario ya tiene una preferencia registrada.");
+            }
+
+            // Create the preference entity
             var preference = new Preference
             {
                 user_id = request.user_id,
@@ -129,117 +177,160 @@ namespace api.Controllers
                 updated_at = DateTime.UtcNow
             };
 
-            _context.user_preferences.Add(preference);
-            await _context.SaveChangesAsync();
-        // Agregar alergias si existen en la solicitud
-            if (request.UserAllergy != null && request.UserAllergy.Any())
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
             {
-                var userAllergies = request.UserAllergy.Select(pa => new User_Allergy
-                {
-                    user_preferences_id = preference.id,
-                    allergy_id = pa.allergie_id,
-                    created_at = DateTime.UtcNow,
-                    updated_at = DateTime.UtcNow
-                }).ToList();
-
-                _context.User_Allergies.AddRange(userAllergies);
+                // Add the preference to the database
+                _context.user_preferences.Add(preference);
                 await _context.SaveChangesAsync();
 
+                // Add allergies if provided
+                if (request.UserAllergy != null && request.UserAllergy.Any())
+                {
+                    // Remove duplicates from the list sent by the user
+                    var uniqueAllergies = request.UserAllergy
+                        .GroupBy(pa => pa.allergie_id) // Group by allergy_id
+                        .Select(group => group.First()) // Take the first element of each group (removing duplicates)
+                        .ToList();
+
+                    // Create the list of allergies to add
+                    var allergiesToAdd = uniqueAllergies
+                        .Select(pa => new User_Allergy
+                        {
+                            user_preferences_id = preference.id,
+                            allergy_id = pa.allergie_id,
+                            created_at = DateTime.UtcNow,
+                            updated_at = DateTime.UtcNow
+                        })
+                        .ToList();
+
+                    // Add non-duplicate allergies
+                    if (allergiesToAdd.Any())
+                    {
+                        _context.User_Allergies.AddRange(allergiesToAdd);
+                        await _context.SaveChangesAsync();
+                    }
+                }
+
+                // Commit the transaction
+                await transaction.CommitAsync();
+            }
+            catch (Exception ex)
+            {
+                // Rollback in case of error
+                await transaction.RollbackAsync();
+                return StatusCode(500, $"Ocurrió un error al crear la preferencia: {ex.Message}");
             }
 
-            
-            return CreatedAtAction(nameof(GetById), new {id = preference.id}, preference);
+            return CreatedAtAction(nameof(GetById), new { id = preference.id }, preference);
         }
+
 
         [HttpPut("{id}")]
         public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdatePreferenceRequestDto preferenceDto)
         {
+            if (id <= 0)
+            {
+                return BadRequest("El ID proporcionado no es válido.");
+            }
+
             if (preferenceDto == null)
             {
                 return BadRequest("Faltan datos en la solicitud.");
             }
 
-            // Buscar las preferencias con sus alergias relacionadas
-            var preferenceModel = await _context.user_preferences
-                .Include(p => p.User_Allergies)
-                .FirstOrDefaultAsync(p => p.id == id);
-
-            if (preferenceModel == null)
+            try
             {
-                return NotFound("No se encontró la preferencia especificada.");
-            }
+                // Retrieve the preference with related allergies
+                var preferenceModel = await _context.user_preferences
+                    .Include(p => p.User_Allergies)
+                    .FirstOrDefaultAsync(p => p.id == id);
 
-            // Actualizar los datos principales de las preferencias
-            preferenceModel.user_id = preferenceDto.user_id;
-            preferenceModel.is_vegetarian = preferenceDto.is_vegetarian;
-            preferenceModel.is_gluten_free = preferenceDto.is_gluten_free;
-            preferenceModel.is_vegan = preferenceDto.is_vegan;
-            preferenceModel.dietary_goals = preferenceDto.dietary_goals;
-            preferenceModel.updated_at = DateTime.UtcNow;
-
-            // Manejar las alergias asociadas
-            if (preferenceDto.UserAllergy != null)
-            {
-                // Eliminar las alergias actuales asociadas a la preferencia
-                var existingAllergies = _context.User_Allergies
-                    .Where(ua => ua.user_preferences_id == preferenceModel.id);
-
-                _context.User_Allergies.RemoveRange(existingAllergies);
-
-                // Agregar las nuevas alergias
-                var newAllergies = preferenceDto.UserAllergy.Select(pa => new User_Allergy
+                if (preferenceModel == null)
                 {
-                    user_preferences_id = preferenceModel.id,
-                    allergy_id = pa.allergie_id,
-                    created_at = DateTime.UtcNow,
-                    updated_at = DateTime.UtcNow
-                }).ToList();
+                    return NotFound("No se encontró la preferencia especificada.");
+                }
 
-                _context.User_Allergies.AddRange(newAllergies);
+                // Update preference main details
+                preferenceModel.user_id = preferenceDto.user_id;
+                preferenceModel.is_vegetarian = preferenceDto.is_vegetarian;
+                preferenceModel.is_gluten_free = preferenceDto.is_gluten_free;
+                preferenceModel.is_vegan = preferenceDto.is_vegan;
+                preferenceModel.dietary_goals = preferenceDto.dietary_goals;
+                preferenceModel.updated_at = DateTime.UtcNow;
+
+                // Handle associated allergies
+                if (preferenceDto.UserAllergy != null)
+                {
+                    // Remove existing allergies linked to the preference
+                    var existingAllergies = _context.User_Allergies
+                        .Where(ua => ua.user_preferences_id == preferenceModel.id);
+
+                    _context.User_Allergies.RemoveRange(existingAllergies);
+
+                    // Add new allergies
+                    var newAllergies = preferenceDto.UserAllergy.Select(pa => new User_Allergy
+                    {
+                        user_preferences_id = preferenceModel.id,
+                        allergy_id = pa.allergie_id,
+                        created_at = DateTime.UtcNow,
+                        updated_at = DateTime.UtcNow
+                    }).ToList();
+
+                    _context.User_Allergies.AddRange(newAllergies);
+                }
+
+                // Save all changes to the database
+                await _context.SaveChangesAsync();
+
+                // Return the updated preference as a DTO
+                return Ok(preferenceModel.ToDto());
             }
-
-            // Guardar todos los cambios en la base de datos
-            await _context.SaveChangesAsync();
-
-            // Retornar la respuesta actualizada en formato DTO
-            return Ok(preferenceModel.ToDto());
+            catch (Exception ex)
+            {
+                // Return a 500 status code with error details in case of an exception
+                return StatusCode(500, $"Ocurrió un error al actualizar la preferencia: {ex.Message}");
+            }
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete([FromRoute] int id)
         {
-            // Cargar la preferencia junto con las alergias relacionadas
+            if (id <= 0)
+            {
+                return BadRequest("El ID proporcionado no es válido");
+            }
+
+            // Load the preference along with related allergies
             var preferenceModel = await _context.user_preferences
                 .Include(p => p.User_Allergies)
                 .FirstOrDefaultAsync(p => p.id == id);
 
             if (preferenceModel == null)
             {
-                return NotFound();
+                return NotFound("La preferencia no existe o ya fue eliminada.");
             }
 
-            // Iniciar una transacción para garantizar la atomicidad
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                // Eliminar las alergias asociadas
+                // Remove associated allergies if any
                 if (preferenceModel.User_Allergies != null && preferenceModel.User_Allergies.Any())
                 {
                     _context.User_Allergies.RemoveRange(preferenceModel.User_Allergies);
                 }
 
-                // Eliminar la preferencia
+                // Remove the preference
                 _context.user_preferences.Remove(preferenceModel);
 
-                // Guardar los cambios en la base de datos
+                // Save changes to the database
                 await _context.SaveChangesAsync();
 
-                // Confirmar la transacción
+                // Commit the transaction
                 await transaction.CommitAsync();
             }
             catch (Exception ex)
             {
-                // Revertir la transacción en caso de error
                 await transaction.RollbackAsync();
                 return StatusCode(500, $"Error al eliminar la preferencia: {ex.Message}");
             }
