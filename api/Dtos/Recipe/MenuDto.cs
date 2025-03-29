@@ -11,6 +11,6 @@ namespace api.Dtos.Recipe
         public DateTime? updated_at { get; set; }
         public string day_of_week { get; set; } = string.Empty;
         public int user_id { get; set; }
-          public List<MenuRecipeDto> menuRecipes { get; set; } = new List<MenuRecipeDto>();
+        public List<MenuRecipeDto> menuRecipes { get; set; } = new List<MenuRecipeDto>();
 }
 }
