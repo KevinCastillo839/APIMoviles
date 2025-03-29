@@ -31,6 +31,7 @@ namespace api.Controllers
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
+
         // It retrieves all the recipes with their related ingredients.
         var recipes = await _context.Recipes
             .Include(r => r.Recipe_Ingredients)
@@ -38,6 +39,7 @@ namespace api.Controllers
             .ToListAsync();
 
         // It maps the recipes to a format more suitable for the response.
+
         var recipesDto = recipes.Select(recipe => new RecipeDto
         {
             id = recipe.id,
@@ -57,6 +59,7 @@ namespace api.Controllers
                     quantity = ri.quantity,
                     Ingredient = new IngredientDto
                     {
+
                         id = ri.Ingredient.id,
                         name = ri.Ingredient.name,
                         description = ri.Ingredient.description
@@ -165,22 +168,14 @@ namespace api.Controllers
         // Verifies if the model is valid
         if (!ModelState.IsValid)
         {
-<<<<<<< Updated upstream
-            return BadRequest(ModelState); // Si no es válido, devuelve los errores de validación
-=======
             return BadRequest(ModelState); // If it is not valid, return the validation errors.
->>>>>>> Stashed changes
         }
 
         // Searches for the recipe in the database
         var recipe = await _context.Recipes.Include(r => r.Recipe_Ingredients).FirstOrDefaultAsync(r => r.id == id);
         if (recipe == null)
         {
-<<<<<<< Updated upstream
-            return NotFound(new { message = "Receta no encontrada" }); // Si no existe, devuelve un mensaje de error
-=======
             return NotFound(new { message = "Receta no encontrada" }); // If it does not exist, return an error message.
->>>>>>> Stashed changes
         }
 
         // Updates the recipe data
@@ -230,8 +225,6 @@ namespace api.Controllers
         return NoContent();
     }
   }
-<<<<<<< Updated upstream
+
 }
-=======
-}
->>>>>>> Stashed changes
+

@@ -5,6 +5,7 @@ using api.Models;
 
 namespace api.Dtos.Recipe
 {
+
     public class CreateRecipeIngredientDto
     {
         public int ingredient_id { get; set; }
@@ -24,3 +25,4 @@ namespace api.Dtos.Recipe
         public DateTime updated_at { get; set; }
     }
 }
+

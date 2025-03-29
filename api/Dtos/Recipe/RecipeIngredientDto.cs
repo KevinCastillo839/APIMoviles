@@ -12,3 +12,4 @@ namespace api.Dtos.Recipe
         public string quantity { get; set; } // Cambiado a double para permitir decimales
     }
 }
+
