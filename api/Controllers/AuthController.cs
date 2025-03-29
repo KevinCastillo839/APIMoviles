@@ -11,6 +11,7 @@ using System.Security.Claims;
 using System.Net;
 using System.Net.Mail;
 using System.Text.RegularExpressions;
+using api.Constants;
 
 
 namespace api.Controllers
@@ -24,41 +25,40 @@ namespace api.Controllers
 
     private readonly IConfiguration _config;
 
-    public AuthController(ApplicationDBContext context, AuthService authService, IConfiguration config)
+    private readonly EmailService _emailService;
+
+    public AuthController(ApplicationDBContext context, AuthService authService, IConfiguration config, EmailService emailService)
     {
         _context = context;
         _authService = authService;
         _config = config;
+        _emailService = emailService;
     }
 
-    [HttpPost("register")]
-    public IActionResult Register([FromBody] User user)
+
+[HttpPost("register")]
+public async Task<IActionResult> Register([FromBody] User user)
+{
+    if (_context.Users.Any(u => u.email == user.email))
+        return BadRequest(new { message = "El usuario ya existe" });
+
+    if (string.IsNullOrWhiteSpace(user.full_name))
+        return BadRequest(new { message = "El campo full_name es obligatorio" });
+
+    var passwordRegex = new Regex(RegexConstants.PasswordPattern);
+    if (!passwordRegex.IsMatch(user.password))
     {
-        // Verificar si el email ya existe
-        if (_context.Users.Any(u => u.email == user.email))
-            return BadRequest(new { message = "El usuario ya existe" });
-
-        // Validar que el campo full_name no esté vacío
-        if (string.IsNullOrWhiteSpace(user.full_name))
-            return BadRequest(new { message = "El campo full_name es obligatorio" });
-
-        // Validar la contraseña (al menos 8 caracteres, una letra mayúscula, una minúscula, un número y un carácter especial)
-        var passwordRegex = new Regex(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$");
-        if (!passwordRegex.IsMatch(user.password))
-        {
-            return BadRequest(new { message = "La contraseña debe tener al menos 8 caracteres, una letra mayúscula, una letra minúscula, un número y un carácter especial" });
-        }
-
-        // Hash de la contraseña
-        user.password = _authService.HashPassword(user.password);
-
-        // El campo Id se gestiona automáticamente por la base de datos
-        _context.Users.Add(user);
-        _context.SaveChanges();
-
-        return Ok(new { message = "Usuario registrado exitosamente" });
+        return BadRequest(new { message = "La contraseña debe tener al menos 8 caracteres, una letra mayúscula, una letra minúscula, un número y un carácter especial" });
     }
 
+    user.password = _authService.HashPassword(user.password);
+    _context.Users.Add(user);
+    _context.SaveChanges();
+
+    await _emailService.SendVerificationEmailAsync(user.email);
+
+    return Ok(new { message = "Usuario registrado exitosamente" });
+}
 
 
 
@@ -87,40 +87,22 @@ namespace api.Controllers
             return Ok(new { message = "Inicio de sesión exitoso", token = token });
         }
        
-    [HttpPost("forgot-password")]
-    public IActionResult ForgotPassword([FromBody] ResetPasswordDto request)
+  [HttpPost("forgot-password")]
+public async Task<IActionResult> ForgotPassword([FromBody] ResetPasswordDto request)
+{
+    var user = _context.Users.FirstOrDefault(u => u.email == request.Email);
+    if (user == null)
     {
-        var user = _context.Users.FirstOrDefault(u => u.email == request.Email);
-        if (user == null)
-        {
-            return BadRequest(new { message = "No se encontró un usuario con este correo" });
-        }
-
-        var token = _authService.GenerateResetToken(user);
-        _authService.SaveToken(user.email, token);
-
-        var smtpClient = new SmtpClient("smtp.gmail.com")
-        {
-            Port = 587,
-            Credentials = new NetworkCredential("kfoods68@gmail.com", "fodr zkyy qsot flos"),
-            EnableSsl = true,
-        };
-
-        var mailMessage = new MailMessage
-        {
-            From = new MailAddress("kfoods68@gmail.com", "KFoods"),
-            Subject = "Restablecimiento de contraseña",
-            Body = $"Tu código de restablecimiento es: {token}",
-            IsBodyHtml = true,
-        };
-                // Marcar el correo como importante
-        mailMessage.Headers.Add("X-Priority", "1");  // Prioridad alta
-        mailMessage.Headers.Add("Importance", "High");  // Alta importancia
-        mailMessage.To.Add(request.Email);
-
-        smtpClient.Send(mailMessage);
-        return Ok(new { message = "Correo de restablecimiento enviado exitosamente" });
+        return BadRequest(new { message = "No se encontró un usuario con este correo" });
     }
+
+    var token = _authService.GenerateResetToken(user);
+    _authService.SaveToken(user.email, token);
+    
+    await _emailService.SendPasswordResetEmailAsync(request.Email, token);
+
+    return Ok(new { message = "Correo de restablecimiento enviado exitosamente" });
+}
     [HttpPost("reset-password")]
     public IActionResult ResetPassword([FromBody] ResetPasswordRequestDto request)
     {
@@ -136,10 +118,10 @@ namespace api.Controllers
         }
 
         // Validar la nueva contraseña (al menos 8 caracteres, una letra mayúscula, una minúscula, un número y un carácter especial)
-        var passwordRegex = new Regex(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$");
-        if (!passwordRegex.IsMatch(request.NewPassword))
+        var passwordRegex = new Regex(RegexConstants.PasswordPattern);
+        if (!passwordRegex.IsMatch(user.password))
         {
-            return BadRequest(new { message = "La nueva contraseña debe tener al menos 8 caracteres, una letra mayúscula, una letra minúscula, un número y un carácter especial" });
+            return BadRequest(new { message = "La contraseña debe tener al menos 8 caracteres, una letra mayúscula, una letra minúscula, un número y un carácter especial" });
         }
 
         // Hash de la nueva contraseña
