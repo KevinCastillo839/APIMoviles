@@ -72,6 +72,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 // Add the AuthService to handle authentication logic
 builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<EmailService>();
 
 var app = builder.Build();
 
