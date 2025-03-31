@@ -19,6 +19,5 @@ namespace api.Models
         public string dietary_goals { get; set; }
         public DateTime created_at { get; set; }
         public DateTime? updated_at { get; set; }
-        public List<User_Allergy> User_Allergies { get; set; } = new List<User_Allergy>();
     }
 }

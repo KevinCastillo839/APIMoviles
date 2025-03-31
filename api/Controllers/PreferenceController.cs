@@ -16,7 +16,7 @@ namespace api.Controllers
 {
     [Route("api/preference")]
     [ApiController]
-    [Authorize] 
+    //[Authorize] 
     public class PreferenceController : ControllerBase
     {
         private readonly ApplicationDBContext _context;
@@ -30,11 +30,9 @@ namespace api.Controllers
         {
             try
             {
-                // Retrieve preferences including related entities
+                // Retrieve preferences including related user
                 var preferences = await _context.user_preferences
                     .Include(p => p.User) // Include the relationship with User
-                    .Include(p => p.User_Allergies)
-                    .ThenInclude(pa => pa.Allergy)
                     .ToListAsync();
 
                 if (preferences == null || !preferences.Any())
@@ -57,21 +55,7 @@ namespace api.Controllers
                     {
                         id = preferences.User.id,
                         full_name = preferences.User.full_name
-                    },
-                    User_Allergies = preferences.User_Allergies
-                        .Where(pa => pa.user_preferences_id == preferences.id)
-                        .Select(pa => new UserAllergyDto
-                        {
-                            id = pa.id,
-                            user_preferences_id = pa.user_preferences_id,
-                            allergie_id = pa.allergy_id,
-                            Allergy = new Dtos.Allergy.AllergyDto
-                            {
-                                id = pa.Allergy.id,
-                                name = pa.Allergy.name,
-                                description = pa.Allergy.description
-                            }
-                        }).ToList()
+                    }
                 }).ToList();
 
                 return Ok(preferenceDto);
@@ -93,11 +77,9 @@ namespace api.Controllers
 
             try
             {
-                // Load preferences along with related allergies and allergy details
+                // Load preferences along with related user
                 var preference = await _context.user_preferences
                     .Include(p => p.User) // Include the relationship with User
-                    .Include(p => p.User_Allergies)
-                    .ThenInclude(pa => pa.Allergy)
                     .FirstOrDefaultAsync(p => p.id == id);
 
                 if (preference == null)
@@ -120,20 +102,7 @@ namespace api.Controllers
                     {
                         id = preference.User.id,
                         full_name = preference.User.full_name
-                    },
-                    User_Allergies = preference.User_Allergies
-                        .Select(pa => new UserAllergyDto
-                        {
-                            id = pa.id,
-                            user_preferences_id = pa.user_preferences_id,
-                            allergie_id = pa.allergy_id,
-                            Allergy = new Dtos.Allergy.AllergyDto
-                            {
-                                id = pa.Allergy.id,
-                                name = pa.Allergy.name,
-                                description = pa.Allergy.description
-                            }
-                        }).ToList()
+                    }
                 };
 
                 return Ok(preferenceDto);
@@ -186,34 +155,6 @@ namespace api.Controllers
                 _context.user_preferences.Add(preference);
                 await _context.SaveChangesAsync();
 
-                // Add allergies if provided
-                if (request.UserAllergy != null && request.UserAllergy.Any())
-                {
-                    // Remove duplicates from the list sent by the user
-                    var uniqueAllergies = request.UserAllergy
-                        .GroupBy(pa => pa.allergie_id) // Group by allergy_id
-                        .Select(group => group.First()) // Take the first element of each group (removing duplicates)
-                        .ToList();
-
-                    // Create the list of allergies to add
-                    var allergiesToAdd = uniqueAllergies
-                        .Select(pa => new User_Allergy
-                        {
-                            user_preferences_id = preference.id,
-                            allergy_id = pa.allergie_id,
-                            created_at = DateTime.UtcNow,
-                            updated_at = DateTime.UtcNow
-                        })
-                        .ToList();
-
-                    // Add non-duplicate allergies
-                    if (allergiesToAdd.Any())
-                    {
-                        _context.User_Allergies.AddRange(allergiesToAdd);
-                        await _context.SaveChangesAsync();
-                    }
-                }
-
                 // Commit the transaction
                 await transaction.CommitAsync();
             }
@@ -226,7 +167,6 @@ namespace api.Controllers
 
             return CreatedAtAction(nameof(GetById), new { id = preference.id }, preference);
         }
-
 
         [HttpPut("{id}")]
         public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdatePreferenceRequestDto preferenceDto)
@@ -243,9 +183,8 @@ namespace api.Controllers
 
             try
             {
-                // Retrieve the preference with related allergies
+                // Retrieve the preference
                 var preferenceModel = await _context.user_preferences
-                    .Include(p => p.User_Allergies)
                     .FirstOrDefaultAsync(p => p.id == id);
 
                 if (preferenceModel == null)
@@ -260,27 +199,6 @@ namespace api.Controllers
                 preferenceModel.is_vegan = preferenceDto.is_vegan;
                 preferenceModel.dietary_goals = preferenceDto.dietary_goals;
                 preferenceModel.updated_at = DateTime.UtcNow;
-
-                // Handle associated allergies
-                if (preferenceDto.UserAllergy != null)
-                {
-                    // Remove existing allergies linked to the preference
-                    var existingAllergies = _context.User_Allergies
-                        .Where(ua => ua.user_preferences_id == preferenceModel.id);
-
-                    _context.User_Allergies.RemoveRange(existingAllergies);
-
-                    // Add new allergies
-                    var newAllergies = preferenceDto.UserAllergy.Select(pa => new User_Allergy
-                    {
-                        user_preferences_id = preferenceModel.id,
-                        allergy_id = pa.allergie_id,
-                        created_at = DateTime.UtcNow,
-                        updated_at = DateTime.UtcNow
-                    }).ToList();
-
-                    _context.User_Allergies.AddRange(newAllergies);
-                }
 
                 // Save all changes to the database
                 await _context.SaveChangesAsync();
@@ -303,9 +221,8 @@ namespace api.Controllers
                 return BadRequest("El ID proporcionado no es válido");
             }
 
-            // Load the preference along with related allergies
+            // Load the preference
             var preferenceModel = await _context.user_preferences
-                .Include(p => p.User_Allergies)
                 .FirstOrDefaultAsync(p => p.id == id);
 
             if (preferenceModel == null)
@@ -313,27 +230,16 @@ namespace api.Controllers
                 return NotFound("La preferencia no existe o ya fue eliminada.");
             }
 
-            using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                // Remove associated allergies if any
-                if (preferenceModel.User_Allergies != null && preferenceModel.User_Allergies.Any())
-                {
-                    _context.User_Allergies.RemoveRange(preferenceModel.User_Allergies);
-                }
-
                 // Remove the preference
                 _context.user_preferences.Remove(preferenceModel);
 
                 // Save changes to the database
                 await _context.SaveChangesAsync();
-
-                // Commit the transaction
-                await transaction.CommitAsync();
             }
             catch (Exception ex)
             {
-                await transaction.RollbackAsync();
                 return StatusCode(500, $"Error al eliminar la preferencia: {ex.Message}");
             }
 

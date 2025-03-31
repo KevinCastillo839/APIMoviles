@@ -17,7 +17,5 @@ namespace api.Dtos.Preference
         public DateTime created_at { get; set; }
         public DateTime? updated_at { get; set; }
         public UserDto User { get; set; }
-        public List<UserAllergyDto> User_Allergies { get; set; } = new List<UserAllergyDto>();
-        
-    }
+     }
 }

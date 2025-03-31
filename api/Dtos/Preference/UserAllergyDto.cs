@@ -9,8 +9,8 @@ namespace api.Dtos.Preference
     public class UserAllergyDto
     {
         public int id { get; set;}
-        public int user_preferences_id { get; set;}
+        public int user_id { get; set;}
         public int allergie_id { get; set; }
-        public AllergyDto Allergy{ get; set; }
+        public List<AllergyDto> allergies { get; set; } = new List<AllergyDto>();
     }
 }

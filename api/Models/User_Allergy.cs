@@ -7,10 +7,10 @@ namespace api.Models
     public class User_Allergy
     {
         public int id { get; set;}
-        public int user_preferences_id { get; set;}
+        public int user_id { get; set;}
 
-        [ForeignKey("user_preferences_id")]
-        public Preference User_Preference { get; set; }
+        [ForeignKey("user_id")]
+        public User User { get; set; }
 
         public int allergy_id { get; set; }
         
