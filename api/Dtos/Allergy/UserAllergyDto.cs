@@ -2,15 +2,16 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using api.Dtos.Allergy;
+using api.Dtos.Auth;
 
-namespace api.Dtos.Preference
+namespace api.Dtos.Allergy
 {
     public class UserAllergyDto
     {
         public int id { get; set;}
         public int user_id { get; set;}
         public int allergie_id { get; set; }
-        public List<AllergyDto> allergies { get; set; } = new List<AllergyDto>();
+        public AllergyDto Allergy { get; set; } 
+        public UserDto User { get; set; }
     }
 }
