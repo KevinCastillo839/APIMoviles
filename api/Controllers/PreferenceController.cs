@@ -16,7 +16,7 @@ namespace api.Controllers
 {
     [Route("api/preference")]
     [ApiController]
-    //[Authorize] 
+    [Authorize] 
     public class PreferenceController : ControllerBase
     {
         private readonly ApplicationDBContext _context;
