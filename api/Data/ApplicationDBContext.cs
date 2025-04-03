@@ -17,16 +17,13 @@ protected override void OnModelCreating(ModelBuilder modelBuilder)
         .HasOne(ri => ri.Recipe)
         .WithMany(r => r.Recipe_Ingredients)
         .HasForeignKey(ri => ri.recipe_id);  // Usa recipe_id como clave foránea
+    
+      
+  modelBuilder.Entity<User_Allergy>()
+      .HasOne(ua => ua.Allergy)
+      .WithMany()
+      .HasForeignKey(ua => ua.allergy_id);
 
-    modelBuilder.Entity<User_Allergy>()
-                .HasOne(ua => ua.User_Preference)
-                .WithMany(up => up.User_Allergies)
-                .HasForeignKey(ua => ua.user_preferences_id);
-
-    modelBuilder.Entity<User_Allergy>()
-        .HasOne(ua => ua.Allergy)
-        .WithMany()
-        .HasForeignKey(ua => ua.allergy_id);
 
     modelBuilder.Entity<Preference>()
         .HasOne(p => p.User)
