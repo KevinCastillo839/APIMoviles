@@ -140,27 +140,21 @@ namespace api.Controllers
         }
     }
 
-    [HttpPut("{userId}")]
+   [HttpPut("{userId}")]
     public async Task<IActionResult> UpdateUserAllergies(int userId, [FromBody] CreateUserAllergyRequestDto userAllergyDto)
     {
         try
         {
-            // Get the user's current allergies
-            var existingUserAllergies = await _context.User_Allergies
+            // Get the user's current allergies from the database
+            var existingAllergyIds = await _context.User_Allergies
                 .Where(ua => ua.user_id == userId)
+                .Select(ua => ua.allergy_id)
                 .ToListAsync();
 
-            var existingAllergyIds = existingUserAllergies.Select(ua => ua.allergy_id).ToList();
-            var newAllergyIds = userAllergyDto.allergy_ids;
-
-            // Identify allergies that need to be eliminated (those that are no longer on the new list)
-            var allergiesToRemove = existingUserAllergies
-                .Where(ua => !newAllergyIds.Contains(ua.allergy_id))
-                .ToList();
-
-            // Identify new allergies that need to be added
-            var allergiesToAdd = newAllergyIds
+            // Filter only new allergies that are not yet in the database
+            var allergiesToAdd = userAllergyDto.allergy_ids
                 .Where(id => !existingAllergyIds.Contains(id))
+                .Distinct() //Eliminate duplicates in the same request
                 .Select(allergyId => new User_Allergy
                 {
                     user_id = userId,
@@ -170,25 +164,16 @@ namespace api.Controllers
                 })
                 .ToList();
 
-            // Remove allergies that are no longer listed
-            if (allergiesToRemove.Any())
-            {
-                _context.User_Allergies.RemoveRange(allergiesToRemove);
-            }
-
-            // Add new allergies
+            // Add only new allergies
             if (allergiesToAdd.Any())
             {
                 _context.User_Allergies.AddRange(allergiesToAdd);
+                await _context.SaveChangesAsync();
             }
-
-            // Save changes to the database
-            await _context.SaveChangesAsync();
 
             return Ok(new
             {
                 message = "Alergias del usuario actualizadas correctamente.",
-                removed = allergiesToRemove.Select(a => a.allergy_id).ToList(),
                 added = allergiesToAdd.Select(a => a.allergy_id).ToList()
             });
         }
