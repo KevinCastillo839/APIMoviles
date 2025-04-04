@@ -15,7 +15,7 @@ namespace api.Models
         public DateTime? updated_at { get; set; }
         public string day_of_week { get; set; } = string.Empty;
         public int user_id { get; set; }
-        public List<Menu_Recipes> MenuRecipes { get; set; } = new List<Menu_Recipes>();
+        public List<Menu_Recipes> Menu_Recipes { get; set; } = new List<Menu_Recipes>();
 
     }
 }

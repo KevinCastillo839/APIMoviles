@@ -18,7 +18,16 @@ protected override void OnModelCreating(ModelBuilder modelBuilder)
         .WithMany(r => r.Recipe_Ingredients)
         .HasForeignKey(ri => ri.recipe_id);  // Usa recipe_id como clave foránea
     
-      
+   modelBuilder.Entity<Menu_Recipes>()
+        .HasOne(mr => mr.Menu)
+        .WithMany(m => m.Menu_Recipes)
+        .HasForeignKey(mr => mr.menu_id); // usa snake_case
+
+    modelBuilder.Entity<Menu_Recipes>()
+        .HasOne(mr => mr.Recipe)
+        .WithMany()
+        .HasForeignKey(mr => mr.recipe_id);
+
   modelBuilder.Entity<User_Allergy>()
       .HasOne(ua => ua.Allergy)
       .WithMany()
