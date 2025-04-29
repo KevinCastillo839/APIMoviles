@@ -301,6 +301,53 @@ public async Task<IActionResult> UpdateMenu(int menuId, [FromBody] UpdateMenuDto
 
 
 
+[HttpGet("weekly/user/{userId}")]
+public async Task<IActionResult> GetWeeklyMenuTables(int userId)
+{
+    try
+    {
+        var menuTables = await _context.Weekly_Menu_Table
+            .Where(wmt => wmt.user_id == userId)
+            .Include(wmt => wmt.Weekly_Menus)
+                .ThenInclude(wm => wm.Menu)
+                    .ThenInclude(m => m.Menu_Recipes)
+                        .ThenInclude(mr => mr.Recipe)
+            .ToListAsync();
+
+        var result = menuTables.Select(wmt => new
+        {
+            id = wmt.id,
+            created_at = wmt.created_at,
+            weekly_menus = wmt.Weekly_Menus.Select(wm => new
+            {
+                id = wm.id,
+                day_of_week = wm.day_of_week,
+                menu = new
+                {
+                    id = wm.Menu.id,
+                    name = wm.Menu.name,
+                    description = wm.Menu.description,
+                    day_of_week = wm.Menu.day_of_week,
+                    recipes = wm.Menu.Menu_Recipes.Select(mr => new
+                    {
+                        id = mr.Recipe.id,
+                        name = mr.Recipe.name,
+                        category = mr.Recipe.category,
+                        preparation_time = mr.Recipe.preparation_time,
+                        image_url = mr.Recipe.image_url
+                    })
+                }
+            })
+        });
+
+        return Ok(result);
+    }
+    catch (Exception ex)
+    {
+        return StatusCode(500, $"Error en el servidor: {ex.Message}");
+    }
+}
+
 
 
 

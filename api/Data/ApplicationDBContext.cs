@@ -13,6 +13,16 @@ namespace api.Data
     public ApplicationDBContext(DbContextOptions dbContextOptions) : base(dbContextOptions) { }
 protected override void OnModelCreating(ModelBuilder modelBuilder)
 {
+      modelBuilder.Entity<Weekly_Menu>()
+        .HasOne(wm => wm.Menu)
+        .WithMany()
+        .HasForeignKey(wm => wm.menu_id);
+
+       modelBuilder.Entity<Weekly_Menu>()
+        .HasOne(wm => wm.Weekly_Menu_Table)
+        .WithMany(wmt => wmt.Weekly_Menus)
+        .HasForeignKey(wm => wm.menu_table_id);
+
     modelBuilder.Entity<Recipe_Ingredient>()
         .HasOne(ri => ri.Recipe)
         .WithMany(r => r.Recipe_Ingredients)
@@ -45,6 +55,11 @@ protected override void OnModelCreating(ModelBuilder modelBuilder)
 
     public DbSet<Menu> Menu { get; set; }
     public DbSet<Menu_Recipes> menu_recipes { get; set; }
+    public DbSet<Weekly_Menu> weekly_menu { get; set; }
+    public DbSet<Weekly_Menu_Table> Weekly_Menu_Table { get; set; }
+
+    
+
     public DbSet<Recipe> Recipes { get; set; }
     public DbSet<Recipe_Ingredient> Recipe_Ingredients { get; set; }
 
