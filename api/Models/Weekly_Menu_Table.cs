@@ -13,5 +13,6 @@ namespace Api.Models
         public DateTime created_at { get; set; }
 
         public List<Weekly_Menu> Weekly_Menus { get; set; }
+        public User User{get;set;}
     }
 }
