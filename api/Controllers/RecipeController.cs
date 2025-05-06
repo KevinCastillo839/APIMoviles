@@ -150,6 +150,7 @@ namespace api.Controllers
             recipe_id = recipe.id,
             ingredient_id = ri.ingredient_id,
             quantity = ri.quantity,
+            unit_measurement_id = ri.unit_measurement_id, //se agregó
             created_at = DateTime.UtcNow,
             updated_at = DateTime.UtcNow
         }).ToList();
@@ -194,6 +195,7 @@ namespace api.Controllers
             recipe_id = recipe.id,
             ingredient_id = ri.ingredient_id,
             quantity = ri.quantity,
+            unit_measurement_id = ri.unit_measurement_id, // se agregó
             created_at = DateTime.UtcNow,
             updated_at = DateTime.UtcNow
         }).ToList();
