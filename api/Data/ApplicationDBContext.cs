@@ -70,7 +70,7 @@ protected override void OnModelCreating(ModelBuilder modelBuilder)
     public DbSet<User_Allergy> User_Allergies { get; set; }
     public DbSet<Preference> user_preferences { get; set; }
 
-
+  public DbSet<Recipe_Allergy> Recipe_Allergies { get; set; }
 
 
 

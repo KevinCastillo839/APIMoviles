@@ -157,6 +157,33 @@ namespace api.Controllers
         _context.Recipe_Ingredients.AddRange(recipeIngredients);
         await _context.SaveChangesAsync();
 
+         // Get the names of the ingredients associated with the recipe
+        var ingredientIds = recipeIngredients.Select(ri => ri.ingredient_id).ToList();
+        var ingredientNames = await _context.Ingredients
+            .Where(i => ingredientIds.Contains(i.id))
+            .Select(i => i.name)
+            .ToListAsync();
+
+        // Check if the names match any allergies
+        var allergies = await _context.Allergies
+            .Where(a => ingredientNames.Contains(a.name)) // Comparison by name
+            .ToListAsync();
+
+        if (allergies.Any())
+        {
+            // Create relationships in recipe_allergies
+            var recipeAllergies = allergies.Select(a => new Recipe_Allergy
+            {
+                recipe_id = recipe.id,
+                allergy_id = a.id,
+                created_at = DateTime.UtcNow,
+                updated_at = DateTime.UtcNow
+            }).ToList();
+
+            _context.Recipe_Allergies.AddRange(recipeAllergies);
+            await _context.SaveChangesAsync();
+        }
+
         // It returns a "Created" status with the URL to access the newly created recipe.
         return CreatedAtAction(nameof(GetById), new { id = recipe.id }, recipe);
     }
@@ -224,7 +251,57 @@ namespace api.Controllers
         // Return a "No Content" status indicating that the deletion was successful
         return NoContent();
     }
+    [HttpGet("user/{userId}")]
+    public async Task<IActionResult> GetRecipesForUser(int userId)
+    {
+        var recipes = await _context.Recipes
+            .FromSqlInterpolated($"EXEC GetRecipesExcludingUserAllergies @UserId = {userId}")
+            .ToListAsync();
+
+        // Gets the IDs of the returned recipes
+        var recipeIds = recipes.Select(r => r.id).ToList();
+
+        // Check the ingredients related to those recipes
+        var recipeIngredients = await _context.Recipe_Ingredients
+            .Where(ri => recipeIds.Contains(ri.recipe_id))
+            .Include(ri => ri.Ingredient)
+            .ToListAsync();
+
+        // Map recipes with their ingredients to the DTO
+        var recipesDto = recipes.Select(recipe => new RecipeDto
+        {
+            id = recipe.id,
+            name = recipe.name,
+            instructions = recipe.instructions,
+            category = recipe.category,
+            preparation_time = recipe.preparation_time,
+            image_url = recipe.image_url,
+            created_at = recipe.created_at,
+            updated_at = recipe.updated_at,
+            Recipe_Ingredients = recipeIngredients
+                .Where(ri => ri.recipe_id == recipe.id)
+                .Select(ri => new RecipeIngredientDto
+                {
+                    id = ri.id,
+                    recipe_id = ri.recipe_id,
+                    ingredient_id = ri.ingredient_id,
+                    quantity = ri.quantity,
+                    Ingredient = new IngredientDto
+                    {
+                        id = ri.Ingredient.id,
+                        name = ri.Ingredient.name,
+                        description = ri.Ingredient.description
+                    }
+                }).ToList()
+        }).ToList();
+
+        // Returns recipes with their ingredients
+        return Ok(recipesDto);
+    }
+
+
   }
+  
 
 }
 
