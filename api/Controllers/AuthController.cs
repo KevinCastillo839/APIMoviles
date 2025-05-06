@@ -119,7 +119,7 @@ public async Task<IActionResult> ForgotPassword([FromBody] ResetPasswordDto requ
 
         // Validar la nueva contraseña (al menos 8 caracteres, una letra mayúscula, una minúscula, un número y un carácter especial)
         var passwordRegex = new Regex(RegexConstants.PasswordPattern);
-        if (!passwordRegex.IsMatch(user.password))
+        if (!passwordRegex.IsMatch(request.NewPassword))
         {
             return BadRequest(new { message = "La contraseña debe tener al menos 8 caracteres, una letra mayúscula, una letra minúscula, un número y un carácter especial" });
         }
