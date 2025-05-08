@@ -57,8 +57,17 @@ public async Task<IActionResult> Register([FromBody] User user)
 
     await _emailService.SendVerificationEmailAsync(user.email);
 
-    return Ok(new { message = "Usuario registrado exitosamente" });
+    // Generar el token JWT para el nuevo usuario
+    var token = _authService.GenerateJwtToken(user);
+
+    return Ok(new
+    {
+        message = "Usuario registrado exitosamente",
+        userId = user.id,
+        token = token
+    });
 }
+
 
 
 
