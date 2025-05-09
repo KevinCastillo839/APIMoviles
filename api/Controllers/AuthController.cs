@@ -57,8 +57,17 @@ public async Task<IActionResult> Register([FromBody] User user)
 
     await _emailService.SendVerificationEmailAsync(user.email);
 
-    return Ok(new { message = "Usuario registrado exitosamente" });
+    // Generar el token JWT para el nuevo usuario
+    var token = _authService.GenerateJwtToken(user);
+
+    return Ok(new
+    {
+        message = "Usuario registrado exitosamente",
+        userId = user.id,
+        token = token
+    });
 }
+
 
 
 
@@ -119,7 +128,7 @@ public async Task<IActionResult> ForgotPassword([FromBody] ResetPasswordDto requ
 
         // Validar la nueva contraseña (al menos 8 caracteres, una letra mayúscula, una minúscula, un número y un carácter especial)
         var passwordRegex = new Regex(RegexConstants.PasswordPattern);
-        if (!passwordRegex.IsMatch(user.password))
+        if (!passwordRegex.IsMatch(request.NewPassword))
         {
             return BadRequest(new { message = "La contraseña debe tener al menos 8 caracteres, una letra mayúscula, una letra minúscula, un número y un carácter especial" });
         }
