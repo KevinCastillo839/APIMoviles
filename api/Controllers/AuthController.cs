@@ -68,33 +68,71 @@ public async Task<IActionResult> Register([FromBody] User user)
     });
 }
 
-
-
-
-        // **Inicio de Sesión**
-    [HttpPost("login")]
-    public IActionResult Login([FromBody] LoginModelDto login)
+[HttpGet("user/{id}")]
+public IActionResult GetUserById(int id)
+{
+    var user = _context.Users.FirstOrDefault(u => u.id == id);
+    if (user == null)
     {
-            // Verificar si el usuario existe
-        var user = _context.Users.FirstOrDefault(u => u.email == login.email);
-        if (user == null)
-        {
-                return Unauthorized(new { message = "Usuario no encontrado" });
-            }
+        return NotFound(new { message = "Usuario no encontrado" });
+    }
 
-            // Verificar la contraseña
-            bool isPasswordValid = _authService.VerifyPassword(login.password, user.password);
-            if (!isPasswordValid)
-            {
-                return Unauthorized(new { message = "Contraseña incorrecta" });
-            }
+    return Ok(new
+    {
+        id = user.id,
+        email = user.email,
+        full_name = user.full_name,
+        created_at = user.created_at
+    });
+}
 
-            // Generar el token JWT
-            var token = _authService.GenerateJwtToken(user);
 
-            // Devolver el token en la respuesta
-            return Ok(new { message = "Inicio de sesión exitoso", token = token });
-        }
+[HttpPost("login")]
+public IActionResult Login([FromBody] LoginModelDto login)
+{
+    var user = _context.Users.FirstOrDefault(u => u.email == login.email);
+    if (user == null)
+    {
+        return Unauthorized(new { message = "Usuario no encontrado" });
+    }
+
+    bool isPasswordValid = _authService.VerifyPassword(login.password, user.password);
+    if (!isPasswordValid)
+    {
+        return Unauthorized(new { message = "Contraseña incorrecta" });
+    }
+
+    var token = _authService.GenerateJwtToken(user);
+
+    return Ok(new 
+    { 
+        message = "Inicio de sesión exitoso", 
+        token = token,
+        userId = user.id // <-- aquí devolvemos también el ID
+    });
+}
+[HttpDelete("delete-account/{id}")]
+public IActionResult DeleteAccount(int id)
+{
+    var user = _context.Users.FirstOrDefault(u => u.id == id);
+    if (user == null)
+    {
+        return NotFound(new { message = "Usuario no encontrado" });
+    }
+
+    _context.Users.Remove(user);
+    _context.SaveChanges();
+
+    return Ok(new { message = "Cuenta eliminada exitosamente" });
+}
+[HttpPost("logout")]
+public IActionResult Logout()
+{
+    // En JWT puro no haces nada en servidor, solo mandas el mensaje
+    return Ok(new { message = "Sesión cerrada exitosamente" });
+}
+
+
        
   [HttpPost("forgot-password")]
 public async Task<IActionResult> ForgotPassword([FromBody] ResetPasswordDto request)
