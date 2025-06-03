@@ -91,4 +91,11 @@ app.UseAuthorization();   // Add this to enable authorization (check roles or cl
 
 // Map controllers
 app.MapControllers();
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(
+        Path.Combine(Directory.GetCurrentDirectory(), "UploadedImages")),
+    RequestPath = "/uploads"
+});
+
 app.Run();
