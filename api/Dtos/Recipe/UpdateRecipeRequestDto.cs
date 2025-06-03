@@ -12,10 +12,10 @@ namespace api.Dtos.Ingredient
         public string instructions { get; set; } = string.Empty;
         public string category { get; set; } = string.Empty;
         public int preparation_time { get; set; }
-        public string image_url { get; set; } = string.Empty;
+        public IFormFile image { get; set; } 
         public DateTime? updated_at { get; set; }
         
         // Lista de ingredientes que se actualizarán junto con la receta
-        public List<RecipeIngredientDto> Recipe_Ingredients { get; set; } = new();
+    public string Recipe_IngredientsJson { get; set; }
     }
 }
