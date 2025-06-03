@@ -21,6 +21,5 @@ namespace api.Models
         public string full_name { get; set; }
 
         public DateTime created_at { get; set; } = DateTime.UtcNow;
-        public ICollection<Weekly_Menu_Table> Weekly_Menu_Tables { get; set; }
     }
 }

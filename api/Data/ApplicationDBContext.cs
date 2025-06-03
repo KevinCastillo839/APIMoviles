@@ -52,10 +52,7 @@ namespace api.Data
                 .HasOne(p => p.User)
                 .WithMany()
                 .HasForeignKey(p => p.user_id);
-            modelBuilder.Entity<Weekly_Menu_Table>()
-                .HasOne(wmt => wmt.User)
-                .WithMany(u => u.Weekly_Menu_Tables)
-                .HasForeignKey(wmt => wmt.user_id);
+        
 
                 modelBuilder.Entity<Weekly_Menu>()
         .HasOne(wm => wm.Weekly_Menu_Table)
