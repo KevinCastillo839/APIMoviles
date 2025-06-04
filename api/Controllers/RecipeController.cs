@@ -10,17 +10,21 @@ using api.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
+using System.ComponentModel.DataAnnotations;
+
+
 
 namespace api.Controllers
 {
   
   [Route("api/recipe")]
   [ApiController]
-  [Authorize] 
+
   public class RecipeController : ControllerBase
   {
     private readonly ApplicationDBContext _context;
-
+    private readonly string _imagePath = Path.Combine(Directory.GetCurrentDirectory(), "UploadedImages");
     
     public RecipeController(ApplicationDBContext context)
     {
@@ -119,34 +123,35 @@ namespace api.Controllers
     }
 
     //Method to create a new recipe.
-    [HttpPost]
-    public async Task<IActionResult> CreateRecipe([FromBody] CreateRecipeRequestDto request)
+  [HttpPost]
+public async Task<IActionResult> CreateRecipe([FromForm] CreateRecipeRequestDto request)
+{
+    if (!ModelState.IsValid)
+        return BadRequest(ModelState);
+
+    // Crear receta base
+    var recipe = new Recipe
     {
-        // Checks if the model is valid (the recipe data).
-        if (!ModelState.IsValid)
-        {
-            return BadRequest(ModelState); // If the model is not valid, it returns the validation errors.
-        }
+        name = request.name,
+        instructions = request.instructions,
+        category = request.category,
+        preparation_time = request.preparation_time,
+        created_at = request.created_at,
+        updated_at = request.updated_at
+    };
 
-        // It creates a new recipe object with the data provided in the request.
-        var recipe = new Recipe
-        {
-            name = request.name,
-            instructions = request.instructions,
-            category = request.category,
-            preparation_time = request.preparation_time,
-            image_url = request.image_url,
-            created_at = DateTime.UtcNow,
-            updated_at = DateTime.UtcNow
-        };
+    await _context.Recipes.AddAsync(recipe);
+    await _context.SaveChangesAsync();
 
-        // It adds the recipe to the context and saves the changes to the database.
-        _context.Recipes.Add(recipe);
-        await _context.SaveChangesAsync();
+    // Guardar imagen
+    if (request.image != null && request.image.Length > 0)
+    {
+        var fileName = recipe.id + Path.GetExtension(request.image.FileName);
+        var filePath = Path.Combine(_imagePath, fileName);
 
-        // It maps the recipe ingredients and adds them to the database.
-        var recipeIngredients = request.Recipe_Ingredients.Select(ri => new Recipe_Ingredient
+        using (var stream = new FileStream(filePath, FileMode.Create))
         {
+
             recipe_id = recipe.id,
             ingredient_id = ri.ingredient_id,
             quantity = ri.quantity,
@@ -154,43 +159,108 @@ namespace api.Controllers
             created_at = DateTime.UtcNow,
             updated_at = DateTime.UtcNow
         }).ToList();
+            await request.image.CopyToAsync(stream);
+        }
 
-        _context.Recipe_Ingredients.AddRange(recipeIngredients);
+
+        recipe.image_url = fileName;
+        _context.Recipes.Update(recipe);
         await _context.SaveChangesAsync();
-
-        // It returns a "Created" status with the URL to access the newly created recipe.
-        return CreatedAtAction(nameof(GetById), new { id = recipe.id }, recipe);
     }
 
-    // Method to update an existing recipe
-    [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateRecipe(int id, [FromBody] UpdateRecipeRequestDto request)
+    // Parsear ingredientes
+    var recipeIngredients = JsonSerializer.Deserialize<List<CreateRecipeIngredientDto>>(request.Recipe_IngredientsJson);
+
+    foreach (var item in recipeIngredients)
     {
-        // Verifies if the model is valid
-        if (!ModelState.IsValid)
+        item.recipe_id = recipe.id;
+
+        // Validar campos requeridos en cada ingrediente
+        var context = new ValidationContext(item);
+        var results = new List<ValidationResult>();
+        if (!Validator.TryValidateObject(item, context, results, true))
         {
-            return BadRequest(ModelState); // If it is not valid, return the validation errors.
+            return BadRequest(results);
+        }
+    }
+
+    var mappedIngredients = recipeIngredients.Select(ri => new Recipe_Ingredient
+    {
+        recipe_id = recipe.id,
+        ingredient_id = ri.ingredient_id,
+        quantity = ri.quantity,
+        created_at = ri.created_at,
+        updated_at = ri.updated_at
+    }).ToList();
+
+    _context.Recipe_Ingredients.AddRange(mappedIngredients);
+    await _context.SaveChangesAsync();
+
+    return CreatedAtAction(nameof(GetById), new { id = recipe.id }, recipe);
+}
+
+[HttpPut("{id}")]
+public async Task<IActionResult> UpdateRecipe(int id, [FromForm] UpdateRecipeRequestDto request)
+{
+    if (!ModelState.IsValid)
+        return BadRequest(ModelState);
+
+    var recipe = await _context.Recipes
+        .Include(r => r.Recipe_Ingredients)
+        .FirstOrDefaultAsync(r => r.id == id);
+
+    if (recipe == null)
+        return NotFound(new { message = "Receta no encontrada" });
+
+    // Actualizar campos de la receta
+    recipe.name = request.name;
+    recipe.instructions = request.instructions;
+    recipe.category = request.category;
+    recipe.preparation_time = request.preparation_time;
+    recipe.updated_at = DateTime.UtcNow;
+
+    // Actualizar imagen si hay archivo nuevo
+    if (request.image != null && request.image.Length > 0)
+    {
+        var fileName = recipe.id + Path.GetExtension(request.image.FileName);
+        var filePath = Path.Combine(_imagePath, fileName);
+
+        using (var stream = new FileStream(filePath, FileMode.Create))
+        {
+            await request.image.CopyToAsync(stream);
         }
 
-        // Searches for the recipe in the database
-        var recipe = await _context.Recipes.Include(r => r.Recipe_Ingredients).FirstOrDefaultAsync(r => r.id == id);
-        if (recipe == null)
+        recipe.image_url = fileName;
+    }
+
+    // Solo actualizar ingredientes si se envió algo en Recipe_IngredientsJson
+    if (!string.IsNullOrWhiteSpace(request.Recipe_IngredientsJson))
+    {
+        List<RecipeIngredientDto> ingredientDtos;
+
+        try
         {
-            return NotFound(new { message = "Receta no encontrada" }); // If it does not exist, return an error message.
+            ingredientDtos = System.Text.Json.JsonSerializer.Deserialize<List<RecipeIngredientDto>>(request.Recipe_IngredientsJson);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = "JSON de ingredientes inválido", error = ex.Message });
         }
 
-        // Updates the recipe data
-        recipe.name = request.name;
-        recipe.instructions = request.instructions;
-        recipe.category = request.category;
-        recipe.preparation_time = request.preparation_time;
-        recipe.image_url = request.image_url;
-        recipe.updated_at = DateTime.UtcNow;
+        // Validar cada ingrediente
+        foreach (var ingredientDto in ingredientDtos)
+        {
+            var context = new ValidationContext(ingredientDto);
+            var results = new List<ValidationResult>();
+            if (!Validator.TryValidateObject(ingredientDto, context, results, true))
+                return BadRequest(results);
+        }
 
-        // Deletes the existing ingredients and adds the new ones
+        // Remover ingredientes antiguos
         _context.Recipe_Ingredients.RemoveRange(recipe.Recipe_Ingredients);
-        
-        var recipeIngredients = request.Recipe_Ingredients.Select(ri => new Recipe_Ingredient
+
+        // Agregar ingredientes nuevos
+        var mappedIngredients = ingredientDtos.Select(ri => new Recipe_Ingredient
         {
             recipe_id = recipe.id,
             ingredient_id = ri.ingredient_id,
@@ -200,14 +270,15 @@ namespace api.Controllers
             updated_at = DateTime.UtcNow
         }).ToList();
 
-        _context.Recipe_Ingredients.AddRange(recipeIngredients);
-        await _context.SaveChangesAsync();
-
-        // Returns a 'No Content' status indicating that the update was successful
-        return NoContent();
+        _context.Recipe_Ingredients.AddRange(mappedIngredients);
     }
 
-    // Method to delete a recipe
+    await _context.SaveChangesAsync();
+
+    return NoContent();
+}
+
+ // Method to delete a recipe
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteRecipe(int id)
     {
@@ -226,7 +297,57 @@ namespace api.Controllers
         // Return a "No Content" status indicating that the deletion was successful
         return NoContent();
     }
+    [HttpGet("user/{userId}")]
+    public async Task<IActionResult> GetRecipesForUser(int userId)
+    {
+        var recipes = await _context.Recipes
+            .FromSqlInterpolated($"EXEC GetRecipesExcludingUserAllergies @UserId = {userId}")
+            .ToListAsync();
+
+        // Gets the IDs of the returned recipes
+        var recipeIds = recipes.Select(r => r.id).ToList();
+
+        // Check the ingredients related to those recipes
+        var recipeIngredients = await _context.Recipe_Ingredients
+            .Where(ri => recipeIds.Contains(ri.recipe_id))
+            .Include(ri => ri.Ingredient)
+            .ToListAsync();
+
+        // Map recipes with their ingredients to the DTO
+        var recipesDto = recipes.Select(recipe => new RecipeDto
+        {
+            id = recipe.id,
+            name = recipe.name,
+            instructions = recipe.instructions,
+            category = recipe.category,
+            preparation_time = recipe.preparation_time,
+            image_url = recipe.image_url,
+            created_at = recipe.created_at,
+            updated_at = recipe.updated_at,
+            Recipe_Ingredients = recipeIngredients
+                .Where(ri => ri.recipe_id == recipe.id)
+                .Select(ri => new RecipeIngredientDto
+                {
+                    id = ri.id,
+                    recipe_id = ri.recipe_id,
+                    ingredient_id = ri.ingredient_id,
+                    quantity = ri.quantity,
+                    Ingredient = new IngredientDto
+                    {
+                        id = ri.Ingredient.id,
+                        name = ri.Ingredient.name,
+                        description = ri.Ingredient.description
+                    }
+                }).ToList()
+        }).ToList();
+
+        // Returns recipes with their ingredients
+        return Ok(recipesDto);
+    }
+
+
   }
+  
 
 }
 
