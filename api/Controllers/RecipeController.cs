@@ -151,17 +151,8 @@ public async Task<IActionResult> CreateRecipe([FromForm] CreateRecipeRequestDto 
 
         using (var stream = new FileStream(filePath, FileMode.Create))
         {
-
-            recipe_id = recipe.id,
-            ingredient_id = ri.ingredient_id,
-            quantity = ri.quantity,
-            unit_measurement_id = ri.unit_measurement_id, //se agregó
-            created_at = DateTime.UtcNow,
-            updated_at = DateTime.UtcNow
-        }).ToList();
             await request.image.CopyToAsync(stream);
         }
-
 
         recipe.image_url = fileName;
         _context.Recipes.Update(recipe);
@@ -265,7 +256,6 @@ public async Task<IActionResult> UpdateRecipe(int id, [FromForm] UpdateRecipeReq
             recipe_id = recipe.id,
             ingredient_id = ri.ingredient_id,
             quantity = ri.quantity,
-            unit_measurement_id = ri.unit_measurement_id, // se agregó
             created_at = DateTime.UtcNow,
             updated_at = DateTime.UtcNow
         }).ToList();
