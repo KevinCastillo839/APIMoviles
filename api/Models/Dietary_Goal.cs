@@ -6,14 +6,10 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace api.Models
 {
-    public class Preference
+    public class Dietary_Goal
     {
         public int id { get; set; }
-        public int user_id { get; set; }
-
-        [ForeignKey("user_id")]
-        public User User { get; set; }
+        public string goal { get; set; }
         public DateTime created_at { get; set; }
-        public DateTime? updated_at { get; set; }
     }
 }

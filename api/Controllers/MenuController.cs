@@ -386,9 +386,10 @@ namespace api.Controllers
                         // Verificar alergias asociadas a la receta
                         !allergiesForRecipe.Any(allergy => userAllergyNames.Contains(allergy)) &&
                         // Verificar alergias en ingredientes
-                        !r.Recipe_Ingredients.Any(ri => userAllergyNames.Any(allergy => ri.Ingredient.name.ToLower().Contains(allergy))) &&
+                        !r.Recipe_Ingredients.Any(ri => userAllergyNames.Any(allergy => ri.Ingredient.name.ToLower().Contains(allergy)));
+                        //&&
                         // Verificar preferencias alimenticias
-                        ValidateRecipeWithPreferences(r, preference);
+                        //ValidateRecipeWithPreferences(r, preference);
                 }).ToList();
 
                 if (!validRecipes.Any())
@@ -498,7 +499,7 @@ return Ok("Menú semanal generado exitosamente.");
         }
         
 
-        ///
+        /*
         /// Verifica si una receta cumple con las preferencias alimenticias.
         ///
         private bool ValidateRecipeWithPreferences(Recipe recipe, Preference preference)
@@ -525,7 +526,7 @@ return Ok("Menú semanal generado exitosamente.");
             }
 
             return true;
-        }
+        }*/
 
 
 

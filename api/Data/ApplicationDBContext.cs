@@ -52,23 +52,23 @@ namespace api.Data
                 .HasOne(p => p.User)
                 .WithMany()
                 .HasForeignKey(p => p.user_id);
-        
 
-                modelBuilder.Entity<Weekly_Menu>()
-        .HasOne(wm => wm.Weekly_Menu_Table)
-        .WithMany(wmt => wmt.Weekly_Menus)
-        .HasForeignKey(wm => wm.menu_table_id)
-        .OnDelete(DeleteBehavior.Cascade);  // Puedes usar .Cascade o lo que consideres
 
-    modelBuilder.Entity<Weekly_Menu_Table>()
-        .HasOne(wmt => wmt.User)
-        .WithMany()
-        .HasForeignKey(wmt => wmt.user_id)
-        .OnDelete(DeleteBehavior.Cascade); 
+            modelBuilder.Entity<Weekly_Menu>()
+    .HasOne(wm => wm.Weekly_Menu_Table)
+    .WithMany(wmt => wmt.Weekly_Menus)
+    .HasForeignKey(wm => wm.menu_table_id)
+    .OnDelete(DeleteBehavior.Cascade);  // Puedes usar .Cascade o lo que consideres
 
-           modelBuilder.Entity<Menu>()
-        .Property(m => m.user_id) // La propiedad del modelo
-        .HasColumnName("user_id"); 
+            modelBuilder.Entity<Weekly_Menu_Table>()
+                .HasOne(wmt => wmt.User)
+                .WithMany()
+                .HasForeignKey(wmt => wmt.user_id)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Menu>()
+         .Property(m => m.user_id) // La propiedad del modelo
+         .HasColumnName("user_id");
 
 
             // Configurar la relación entre Menu y User
@@ -103,7 +103,10 @@ namespace api.Data
 
         public DbSet<Recipe_Allergy> Recipe_Allergies { get; set; }
 
-
+        public DbSet<Dietary_Goal> Dietary_Goals { get; set; }
+        public DbSet<Dietary_Restriction> Dietary_Restrictions { get; set; }
+        public DbSet<User_Dietary_Restriction> User_Dietary_Restrictions { get; set; }
+        public DbSet<User_Dietary_Goal> User_Dietary_Goals { get; set; }
 
     }
 }

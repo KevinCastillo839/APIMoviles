@@ -45,10 +45,6 @@ namespace api.Controllers
                 {
                     id = preferences.id,
                     user_id = preferences.user_id,
-                    is_vegan = preferences.is_vegan,
-                    is_gluten_free = preferences.is_gluten_free,
-                    is_vegetarian = preferences.is_vegetarian,
-                    dietary_goals = preferences.dietary_goals,
                     created_at = preferences.created_at,
                     updated_at = preferences.updated_at,
                     User = new UserDto // Convert User entity to DTO
@@ -92,10 +88,6 @@ namespace api.Controllers
                 {
                     id = preference.id,
                     user_id = preference.user_id,
-                    is_vegan = preference.is_vegan,
-                    is_gluten_free = preference.is_gluten_free,
-                    is_vegetarian = preference.is_vegetarian,
-                    dietary_goals = preference.dietary_goals,
                     created_at = preference.created_at,
                     updated_at = preference.updated_at,
                     User = new UserDto // Convert User entity to DTO
@@ -140,10 +132,6 @@ namespace api.Controllers
             var preference = new Preference
             {
                 user_id = request.user_id,
-                is_vegetarian = request.is_vegetarian,
-                is_gluten_free = request.is_gluten_free,
-                is_vegan = request.is_vegan,
-                dietary_goals = request.dietary_goals,
                 created_at = DateTime.UtcNow,
                 updated_at = DateTime.UtcNow
             };
@@ -194,10 +182,6 @@ namespace api.Controllers
 
                 // Update preference main details
                 preferenceModel.user_id = preferenceDto.user_id;
-                preferenceModel.is_vegetarian = preferenceDto.is_vegetarian;
-                preferenceModel.is_gluten_free = preferenceDto.is_gluten_free;
-                preferenceModel.is_vegan = preferenceDto.is_vegan;
-                preferenceModel.dietary_goals = preferenceDto.dietary_goals;
                 preferenceModel.updated_at = DateTime.UtcNow;
 
                 // Save all changes to the database
