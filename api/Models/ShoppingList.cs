@@ -11,6 +11,8 @@ namespace api.Models
     public class ShoppingList
     {
         public int id { get; set; }
+        public int recipe_id { get; set; } // Clave foránea
+        public Recipe Recipe { get; set; } // Propiedad de navegacion
         public int user_id { get; set; }
         public int menu_id { get; set; }
         public DateTime created_at { get; set; }

@@ -58,7 +58,7 @@ namespace api.Controllers
                 .Select(ri => new RecipeIngredientDto
                 {
                     id = ri.id,
-                    recipe_id = ri.recipe_id,
+                    recipe_id = ri.RecipeId, //recipe_id
                     ingredient_id = ri.ingredient_id,
                     quantity = ri.quantity,
                     Ingredient = new IngredientDto
@@ -106,7 +106,7 @@ namespace api.Controllers
                 .Select(ri => new RecipeIngredientDto
                 {
                     id = ri.id,
-                    recipe_id = ri.recipe_id,
+                    recipe_id = ri.RecipeId, //recipe_id
                     ingredient_id = ri.ingredient_id,
                     quantity = ri.quantity,
                     Ingredient = new IngredientDto
@@ -123,7 +123,7 @@ namespace api.Controllers
     }
 
     //Method to create a new recipe.
-  [HttpPost]
+[HttpPost]
 public async Task<IActionResult> CreateRecipe([FromForm] CreateRecipeRequestDto request)
 {
     if (!ModelState.IsValid)
@@ -151,17 +151,8 @@ public async Task<IActionResult> CreateRecipe([FromForm] CreateRecipeRequestDto 
 
         using (var stream = new FileStream(filePath, FileMode.Create))
         {
-
-            recipe_id = recipe.id,
-            ingredient_id = ri.ingredient_id,
-            quantity = ri.quantity,
-            unit_measurement_id = ri.unit_measurement_id, //se agregó
-            created_at = DateTime.UtcNow,
-            updated_at = DateTime.UtcNow
-        }).ToList();
             await request.image.CopyToAsync(stream);
         }
-
 
         recipe.image_url = fileName;
         _context.Recipes.Update(recipe);
@@ -186,7 +177,7 @@ public async Task<IActionResult> CreateRecipe([FromForm] CreateRecipeRequestDto 
 
     var mappedIngredients = recipeIngredients.Select(ri => new Recipe_Ingredient
     {
-        recipe_id = recipe.id,
+        RecipeId = recipe.id,
         ingredient_id = ri.ingredient_id,
         quantity = ri.quantity,
         created_at = ri.created_at,
@@ -262,7 +253,7 @@ public async Task<IActionResult> UpdateRecipe(int id, [FromForm] UpdateRecipeReq
         // Agregar ingredientes nuevos
         var mappedIngredients = ingredientDtos.Select(ri => new Recipe_Ingredient
         {
-            recipe_id = recipe.id,
+            RecipeId = recipe.id,
             ingredient_id = ri.ingredient_id,
             quantity = ri.quantity,
             unit_measurement_id = ri.unit_measurement_id, // se agregó
@@ -309,7 +300,7 @@ public async Task<IActionResult> UpdateRecipe(int id, [FromForm] UpdateRecipeReq
 
         // Check the ingredients related to those recipes
         var recipeIngredients = await _context.Recipe_Ingredients
-            .Where(ri => recipeIds.Contains(ri.recipe_id))
+            .Where(ri => recipeIds.Contains(ri.RecipeId))
             .Include(ri => ri.Ingredient)
             .ToListAsync();
 
@@ -325,11 +316,11 @@ public async Task<IActionResult> UpdateRecipe(int id, [FromForm] UpdateRecipeReq
             created_at = recipe.created_at,
             updated_at = recipe.updated_at,
             Recipe_Ingredients = recipeIngredients
-                .Where(ri => ri.recipe_id == recipe.id)
+                .Where(ri => ri.RecipeId == recipe.id)
                 .Select(ri => new RecipeIngredientDto
                 {
                     id = ri.id,
-                    recipe_id = ri.recipe_id,
+                    recipe_id = ri.RecipeId,
                     ingredient_id = ri.ingredient_id,
                     quantity = ri.quantity,
                     Ingredient = new IngredientDto
@@ -350,4 +341,3 @@ public async Task<IActionResult> UpdateRecipe(int id, [FromForm] UpdateRecipeReq
   
 
 }
-
