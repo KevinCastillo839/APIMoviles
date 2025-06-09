@@ -16,7 +16,7 @@ namespace api.Controllers
 {
     [Route("api/preference")]
     [ApiController]
-    [Authorize] 
+   
     public class PreferenceController : ControllerBase
     {
         private readonly ApplicationDBContext _context;
@@ -153,7 +153,8 @@ namespace api.Controllers
                 return StatusCode(500, $"Ocurrió un error al crear la preferencia: {ex.Message}");
             }
 
-            return CreatedAtAction(nameof(GetById), new { id = preference.id }, preference);
+                return await GetById(preference.id);
+
         }
 
         [HttpPut("{id}")]
