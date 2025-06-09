@@ -15,5 +15,7 @@ namespace api.Models
         public User User { get; set; }
         public DateTime created_at { get; set; }
         public DateTime? updated_at { get; set; }
+         public ICollection<User_Dietary_Goal> User_Dietary_Goals { get; set; }
+        public ICollection<User_Dietary_Restriction> User_Dietary_Restrictions { get; set; }
     }
 }
