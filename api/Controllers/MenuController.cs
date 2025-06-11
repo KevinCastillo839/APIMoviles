@@ -436,7 +436,7 @@ public async Task<IActionResult> GenerateWeeklyMenu(int user_id)
     var menu = new Menu
     {
         name = $"Menú del día {i + 1}",
-        description = "Generado automáticamente",
+        description = "Menú diseñado para apoyar tus metas nutricionales",
         day_of_week = daysOfWeek[i],
         created_at = DateTime.UtcNow,
         user_id = user_id,
