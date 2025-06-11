@@ -320,7 +320,7 @@ public async Task<IActionResult> GetLatestWeeklyMenuTable(int userId)
         var result = new
         {
             id = latestMenuTable.id,
-            created_at = latestMenuTable.created_at,
+             created_at = latestMenuTable.created_at.ToString("dd/MM/yyyy"),
             weekly_menus = latestMenuTable.Weekly_Menus.Select(wm => new
             {
                 id = wm.id,
