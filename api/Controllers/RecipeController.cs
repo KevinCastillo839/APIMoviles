@@ -17,119 +17,227 @@ using System.ComponentModel.DataAnnotations;
 
 namespace api.Controllers
 {
-  
-  [Route("api/recipe")]
-  [ApiController]
 
-  public class RecipeController : ControllerBase
-  {
-    private readonly ApplicationDBContext _context;
-    private readonly string _imagePath = Path.Combine(Directory.GetCurrentDirectory(), "UploadedImages");
-    
-    public RecipeController(ApplicationDBContext context)
+    [Route("api/recipe")]
+    [ApiController]
+
+    public class RecipeController : ControllerBase
     {
-      _context = context;
-    }
+        private readonly ApplicationDBContext _context;
+        private readonly string _imagePath = Path.Combine(Directory.GetCurrentDirectory(), "UploadedImages");
 
-    // Method to get all recipes
-    [HttpGet]
-    public async Task<IActionResult> GetAll()
-    {
-
-        // It retrieves all the recipes with their related ingredients.
-        var recipes = await _context.Recipes
-            .Include(r => r.Recipe_Ingredients)
-            .ThenInclude(ri => ri.Ingredient) 
-            .ToListAsync();
-
-        // It maps the recipes to a format more suitable for the response.
-
-        var recipesDto = recipes.Select(recipe => new RecipeDto
+        public RecipeController(ApplicationDBContext context)
         {
-            id = recipe.id,
-            name = recipe.name,
-            instructions = recipe.instructions,
-            category = recipe.category,
-            preparation_time = recipe.preparation_time,
-            image_url = recipe.image_url,
-            created_at = recipe.created_at,
-            updated_at = recipe.updated_at,
-            Recipe_Ingredients = recipe.Recipe_Ingredients
-                .Select(ri => new RecipeIngredientDto
-                {
-                    id = ri.id,
-                    recipe_id = ri.recipe_id,
-                    ingredient_id = ri.ingredient_id,
-                    quantity = ri.quantity,
-                    Ingredient = new IngredientDto
-                    {
-
-                        id = ri.Ingredient.id,
-                        name = ri.Ingredient.name,
-                        description = ri.Ingredient.description
-                    }
-                }).ToList()
-        }).ToList();
-
-        // It returns the list of mapped recipes.
-        return Ok(recipesDto);
-    }
-
-    // Method to get a recipe by its ID.
-    [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(int id)
-    {
-        // Searches for a specific recipe along with its related ingredients.
-        var recipe = await _context.Recipes
-            .Include(r => r.Recipe_Ingredients)
-            .ThenInclude(ri => ri.Ingredient)
-            .FirstOrDefaultAsync(r => r.id == id);
-
-        // If the recipe is not found, it returns an error message.
-        if (recipe == null)
-        {
-            return NotFound(new { message = "Receta no encontrada" });
+            _context = context;
         }
 
-        // Maps the retrieved recipe to a suitable format for the response.
-        var recipeDto = new RecipeDto
+        // Method to get all recipes
+        [HttpGet]
+        public async Task<IActionResult> GetAll()
         {
-            id = recipe.id,
-            name = recipe.name,
-            instructions = recipe.instructions,
-            category = recipe.category,
-            preparation_time = recipe.preparation_time,
-            image_url = recipe.image_url,
-            created_at = recipe.created_at,
-            updated_at = recipe.updated_at,
-            Recipe_Ingredients = recipe.Recipe_Ingredients
-                .Select(ri => new RecipeIngredientDto
-                {
-                    id = ri.id,
-                    recipe_id = ri.recipe_id,
-                    ingredient_id = ri.ingredient_id,
-                    quantity = ri.quantity,
-                    Ingredient = new IngredientDto
+
+            // It retrieves all the recipes with their related ingredients.
+            var recipes = await _context.Recipes
+                .Include(r => r.Recipe_Ingredients)
+                .ThenInclude(ri => ri.Ingredient)
+                .ToListAsync();
+
+            // It maps the recipes to a format more suitable for the response.
+
+            var recipesDto = recipes.Select(recipe => new RecipeDto
+            {
+                id = recipe.id,
+                name = recipe.name,
+                instructions = recipe.instructions,
+                category = recipe.category,
+                preparation_time = recipe.preparation_time,
+                image_url = recipe.image_url,
+                created_at = recipe.created_at,
+                updated_at = recipe.updated_at,
+                Recipe_Ingredients = recipe.Recipe_Ingredients
+                    .Select(ri => new RecipeIngredientDto
                     {
-                        id = ri.Ingredient.id,
-                        name = ri.Ingredient.name,
-                        description = ri.Ingredient.description
-                    }
-                }).ToList()
-        };
+                        id = ri.id,
+                        recipe_id = ri.recipe_id,
+                        ingredient_id = ri.ingredient_id,
+                        quantity = ri.quantity,
+                        Ingredient = new IngredientDto
+                        {
 
-        //Returns the requested recipe.
-        return Ok(recipeDto);
-    }
+                            id = ri.Ingredient.id,
+                            name = ri.Ingredient.name,
+                            description = ri.Ingredient.description
+                        }
+                    }).ToList()
+            }).ToList();
 
-    //Method to create a new recipe.
-  [HttpPost]
-public async Task<IActionResult> CreateRecipe([FromForm] CreateRecipeRequestDto request)
+            // It returns the list of mapped recipes.
+            return Ok(recipesDto);
+        }
+
+
+        [HttpGet("user/{userId}/recipes")]
+        public async Task<IActionResult> GetByUserId(int userId)
+        {
+            // Filtrar recetas donde el UserId coincida
+            var recipes = await _context.Recipes
+                .Where(r => r.user_id == userId) // <-- aquí filtramos por userId
+                .Include(r => r.Recipe_Ingredients)
+                .ThenInclude(ri => ri.Ingredient)
+                .ToListAsync();
+
+            var recipesDto = recipes.Select(recipe => new RecipeDto
+            {
+                id = recipe.id,
+                name = recipe.name,
+                instructions = recipe.instructions,
+                category = recipe.category,
+                preparation_time = recipe.preparation_time,
+                image_url = recipe.image_url,
+                created_at = recipe.created_at,
+                updated_at = recipe.updated_at,
+                Recipe_Ingredients = recipe.Recipe_Ingredients
+                    .Select(ri => new RecipeIngredientDto
+                    {
+                        id = ri.id,
+                        recipe_id = ri.recipe_id,
+                        ingredient_id = ri.ingredient_id,
+                        quantity = ri.quantity,
+                        Ingredient = new IngredientDto
+                        {
+                            id = ri.Ingredient.id,
+                            name = ri.Ingredient.name,
+                            description = ri.Ingredient.description
+                        }
+                    }).ToList()
+            }).ToList();
+
+            return Ok(recipesDto);
+        }
+
+        // Method to get a recipe by its ID.
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetById(int id)
+        {
+            // Searches for a specific recipe along with its related ingredients.
+            var recipe = await _context.Recipes
+                .Include(r => r.Recipe_Ingredients)
+                .ThenInclude(ri => ri.Ingredient)
+                .FirstOrDefaultAsync(r => r.id == id);
+
+            // If the recipe is not found, it returns an error message.
+            if (recipe == null)
+            {
+                return NotFound(new { message = "Receta no encontrada" });
+            }
+
+            // Maps the retrieved recipe to a suitable format for the response.
+            var recipeDto = new RecipeDto
+            {
+                id = recipe.id,
+                name = recipe.name,
+                instructions = recipe.instructions,
+                category = recipe.category,
+                preparation_time = recipe.preparation_time,
+                image_url = recipe.image_url,
+                created_at = recipe.created_at,
+                updated_at = recipe.updated_at,
+                Recipe_Ingredients = recipe.Recipe_Ingredients
+                    .Select(ri => new RecipeIngredientDto
+                    {
+                        id = ri.id,
+                        recipe_id = ri.recipe_id,
+                        ingredient_id = ri.ingredient_id,
+                        quantity = ri.quantity,
+                        Ingredient = new IngredientDto
+                        {
+                            id = ri.Ingredient.id,
+                            name = ri.Ingredient.name,
+                            description = ri.Ingredient.description
+                        }
+                    }).ToList()
+            };
+
+            //Returns the requested recipe.
+            return Ok(recipeDto);
+        }
+
+        //Method to create a new recipe.
+        [HttpPost]
+        public async Task<IActionResult> CreateRecipe([FromForm] CreateRecipeRequestDto request)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            // Crear receta base
+            var recipe = new Recipe
+            {
+                name = request.name,
+                instructions = request.instructions,
+                category = request.category,
+                preparation_time = request.preparation_time,
+                created_at = request.created_at,
+                updated_at = request.updated_at
+            };
+
+            await _context.Recipes.AddAsync(recipe);
+            await _context.SaveChangesAsync();
+
+            // Guardar imagen
+            if (request.image != null && request.image.Length > 0)
+            {
+                var fileName = recipe.id + Path.GetExtension(request.image.FileName);
+                var filePath = Path.Combine(_imagePath, fileName);
+
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await request.image.CopyToAsync(stream);
+                }
+
+                recipe.image_url = fileName;
+                _context.Recipes.Update(recipe);
+                await _context.SaveChangesAsync();
+            }
+
+            // Parsear ingredientes
+            var recipeIngredients = JsonSerializer.Deserialize<List<CreateRecipeIngredientDto>>(request.Recipe_IngredientsJson);
+
+            foreach (var item in recipeIngredients)
+            {
+                item.recipe_id = recipe.id;
+
+                // Validar campos requeridos en cada ingrediente
+                var context = new ValidationContext(item);
+                var results = new List<ValidationResult>();
+                if (!Validator.TryValidateObject(item, context, results, true))
+                {
+                    return BadRequest(results);
+                }
+            }
+
+            var mappedIngredients = recipeIngredients.Select(ri => new Recipe_Ingredient
+            {
+                recipe_id = recipe.id,
+                ingredient_id = ri.ingredient_id,
+                quantity = ri.quantity,
+                created_at = ri.created_at,
+                updated_at = ri.updated_at
+            }).ToList();
+
+            _context.Recipe_Ingredients.AddRange(mappedIngredients);
+            await _context.SaveChangesAsync();
+
+            return CreatedAtAction(nameof(GetById), new { id = recipe.id }, recipe);
+        }
+
+
+[HttpPost("createmyrecipe")]
+public async Task<IActionResult> CreateMyRecipe([FromForm] CreateRecipeRequestDto request)
 {
     if (!ModelState.IsValid)
         return BadRequest(ModelState);
 
-    // Crear receta base
+    // Crear receta base con el user_id
     var recipe = new Recipe
     {
         name = request.name,
@@ -137,7 +245,8 @@ public async Task<IActionResult> CreateRecipe([FromForm] CreateRecipeRequestDto 
         category = request.category,
         preparation_time = request.preparation_time,
         created_at = request.created_at,
-        updated_at = request.updated_at
+        updated_at = request.updated_at,
+        user_id = request.user_id  // <- Aquí se asigna el usuario
     };
 
     await _context.Recipes.AddAsync(recipe);

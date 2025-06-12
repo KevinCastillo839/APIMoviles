@@ -299,7 +299,57 @@ namespace api.Controllers
             }
         }
 
+        /*
+        [HttpGet("weekly/user/{userId}")]
+        public async Task<IActionResult> GetLatestWeeklyMenuTable(int userId)
+        {
+            try
+            {
+                var latestMenuTable = await _context.Weekly_Menu_Table
+                    .Where(wmt => wmt.user_id == userId)
+                    .OrderByDescending(wmt => wmt.id)
+                    .Include(wmt => wmt.Weekly_Menus)
+                        .ThenInclude(wm => wm.Menu)
+                            .ThenInclude(m => m.Menu_Recipes)
+                                .ThenInclude(mr => mr.Recipe)
+                    .FirstOrDefaultAsync();
 
+                if (latestMenuTable == null)
+                    return NotFound("No se encontró ningún menú semanal para el usuario.");
+
+                var result = new
+                {
+                    id = latestMenuTable.id,
+                     created_at = latestMenuTable.created_at.ToString("dd/MM/yyyy"),
+                    weekly_menus = latestMenuTable.Weekly_Menus.Select(wm => new
+                    {
+                        id = wm.id,
+                        day_of_week = wm.day_of_week,
+                        menu = new
+                        {
+                            id = wm.Menu.id,
+                            name = wm.Menu.name,
+                            description = wm.Menu.description,
+                            day_of_week = wm.Menu.day_of_week,
+                            recipes = wm.Menu.Menu_Recipes.Select(mr => new
+                            {
+                                id = mr.Recipe.id,
+                                name = mr.Recipe.name,
+                                category = mr.Recipe.category,
+                                preparation_time = mr.Recipe.preparation_time,
+                                image_url = mr.Recipe.image_url
+                            })
+                        }
+                    })
+                };
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error en el servidor: {ex.Message}");
+            }
+        }*/
 [HttpGet("weekly/user/{userId}")]
 public async Task<IActionResult> GetLatestWeeklyMenuTable(int userId)
 {
@@ -312,6 +362,8 @@ public async Task<IActionResult> GetLatestWeeklyMenuTable(int userId)
                 .ThenInclude(wm => wm.Menu)
                     .ThenInclude(m => m.Menu_Recipes)
                         .ThenInclude(mr => mr.Recipe)
+                            .ThenInclude(r => r.Recipe_Ingredients)
+                                .ThenInclude(ri => ri.Ingredient)
             .FirstOrDefaultAsync();
 
         if (latestMenuTable == null)
@@ -320,7 +372,7 @@ public async Task<IActionResult> GetLatestWeeklyMenuTable(int userId)
         var result = new
         {
             id = latestMenuTable.id,
-             created_at = latestMenuTable.created_at.ToString("dd/MM/yyyy"),
+            created_at = latestMenuTable.created_at.ToString("dd/MM/yyyy"),
             weekly_menus = latestMenuTable.Weekly_Menus.Select(wm => new
             {
                 id = wm.id,
@@ -337,7 +389,20 @@ public async Task<IActionResult> GetLatestWeeklyMenuTable(int userId)
                         name = mr.Recipe.name,
                         category = mr.Recipe.category,
                         preparation_time = mr.Recipe.preparation_time,
-                        image_url = mr.Recipe.image_url
+                        image_url = mr.Recipe.image_url,
+                        recipe_ingredients = mr.Recipe.Recipe_Ingredients.Select(ri => new
+                        {
+                            id = ri.id,
+                            recipe_id = ri.recipe_id,
+                            ingredient_id = ri.ingredient_id,
+                            quantity = ri.quantity,
+                            ingredient = new
+                            {
+                                id = ri.Ingredient.id,
+                                name = ri.Ingredient.name,
+                                description = ri.Ingredient.description
+                            }
+                        })
                     })
                 }
             })
@@ -351,7 +416,8 @@ public async Task<IActionResult> GetLatestWeeklyMenuTable(int userId)
     }
 }
 
- [HttpPost("weekly/user/{user_id}/generate")]
+
+        [HttpPost("weekly/user/{user_id}/generate")]
 public async Task<IActionResult> GenerateWeeklyMenu(int user_id)
 {
     try
