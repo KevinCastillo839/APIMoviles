@@ -100,48 +100,138 @@ namespace api.Controllers
         // ─────────────────────────────────────────────────────────────────────────────
         // Obtener lista de compras semanal para un usuario
         // ─────────────────────────────────────────────────────────────────────────────
+        // [HttpGet("by-user/{userId}")]
+        // public async Task<IActionResult> GetWeeklyShoppingList(int userId)
+        // {
+        //     var menuIds = await _context.Menu
+        //         .Where(m => m.user_id == userId)
+        //         .Select(m => m.id)
+        //         .ToListAsync();
+
+        //     if (!menuIds.Any())
+        //         return NotFound(new { message = "No se encontraron menús para este usuario" });
+
+        //     var recipeIds = await _context.menu_recipes
+        //         .Where(mr => menuIds.Contains(mr.menu_id))
+        //         .Select(mr => mr.recipe_id)
+        //         .Distinct()
+        //         .ToListAsync();
+
+        //     if (!recipeIds.Any())
+        //         return NotFound(new { message = "No se encontraron recetas asociadas a los menús del usuario" });
+
+        //     var recipeIngredients = await _context.Recipe_Ingredients
+        //         .Include(ri => ri.Ingredient)
+        //         .Include(ri => ri.Unit_Measurement)
+        //         .Where(ri => recipeIds.Contains(ri.RecipeId))
+        //         .ToListAsync();
+
+        //     var groupedShoppingList = recipeIngredients
+        //         .GroupBy(ri => new { IngredientName = ri.Ingredient.name, UnitName = ri.Unit_Measurement.name })
+        //         .Select(g => new
+        //         {
+        //             Ingredient = g.Key.IngredientName,
+        //             Unit = g.Key.UnitName,
+        //             TotalQuantity = g.Sum(ri => ri.quantity)
+        //         })
+        //         .OrderBy(g => g.Ingredient)
+        //         .ToList();
+
+        //     return Ok(groupedShoppingList);
+        // }
+
+
         [HttpGet("by-user/{userId}")]
         public async Task<IActionResult> GetWeeklyShoppingList(int userId)
         {
-            var menuIds = await _context.Menu
-                .Where(m => m.user_id == userId)
-                .Select(m => m.id)
-                .ToListAsync();
+            try
+            {
+                // 1. Obtener IDs de menús del usuario
+                var menuIds = await _context.Menu
+                    .Where(m => m.user_id == userId)
+                    .Select(m => m.id)
+                    .ToListAsync();
 
-            if (!menuIds.Any())
-                return NotFound(new { message = "No se encontraron menús para este usuario" });
+                if (!menuIds.Any())
+                    return NotFound(new { message = "No se encontraron menús para este usuario" });
 
-            var recipeIds = await _context.menu_recipes
-                .Where(mr => menuIds.Contains(mr.menu_id))
-                .Select(mr => mr.recipe_id)
-                .Distinct()
-                .ToListAsync();
+                // 2. Obtener IDs de recetas de esos menús
+                var recipeIds = await _context.menu_recipes
+                    .Where(mr => menuIds.Contains(mr.menu_id))
+                    .Select(mr => mr.recipe_id)
+                    .Distinct()
+                    .ToListAsync();
 
-            if (!recipeIds.Any())
-                return NotFound(new { message = "No se encontraron recetas asociadas a los menús del usuario" });
+                if (!recipeIds.Any())
+                    return NotFound(new { message = "No se encontraron recetas asociadas a los menús del usuario" });
 
-            var recipeIngredients = await _context.Recipe_Ingredients
-                .Include(ri => ri.Ingredient)
-                .Include(ri => ri.Unit_Measurement)
-                .Where(ri => recipeIds.Contains(ri.RecipeId))
-                .ToListAsync();
+                // 3. Obtener ingredientes de las recetas SIN Include (evita problemas de mapeo)
+                var recipeIngredientsData = await _context.Recipe_Ingredients
+                    .Where(ri => recipeIds.Contains(ri.RecipeId))
+                    .Select(ri => new
+                    {
+                        IngredientId = ri.ingredient_id,
+                        UnitId = ri.unit_measurement_id,
+                        Quantity = ri.quantity
+                    })
+                    .ToListAsync();
 
-            var groupedShoppingList = recipeIngredients
-                .GroupBy(ri => new { IngredientName = ri.Ingredient.name, UnitName = ri.Unit_Measurement.name })
-                .Select(g => new
+                if (!recipeIngredientsData.Any())
+                    return NotFound(new { message = "No se encontraron ingredientes para las recetas" });
+
+                // 4. Obtener nombres de ingredientes
+                var ingredientIds = recipeIngredientsData.Select(ri => ri.IngredientId).Distinct().ToList();
+                var ingredients = await _context.Ingredients
+                    .Where(i => ingredientIds.Contains(i.id))
+                    .Select(i => new { i.id, i.name })
+                    .ToDictionaryAsync(i => i.id, i => i.name);
+
+                // 5. Obtener nombres de unidades de medida
+                var unitIds = recipeIngredientsData.Select(ri => ri.UnitId).Distinct().ToList();
+                var units = await _context.Unit_Measurements
+                    .Where(u => unitIds.Contains(u.id))
+                    .Select(u => new { u.id, u.name })
+                    .ToDictionaryAsync(u => u.id, u => u.name);
+
+                // 6. Agrupar y crear la lista de compras
+                var groupedShoppingList = recipeIngredientsData
+                    .GroupBy(ri => new
+                    {
+                        IngredientId = ri.IngredientId,
+                        UnitId = ri.UnitId
+                    })
+                    .Select(g => new
+                    {
+                        Ingredient = ingredients.GetValueOrDefault(g.Key.IngredientId, "Ingrediente desconocido"),
+                        Unit = units.GetValueOrDefault(g.Key.UnitId, "Unidad desconocida"),
+                        TotalQuantity = g.Sum(ri => ri.Quantity)
+                    })
+                    .OrderBy(g => g.Ingredient)
+                    .ToList();
+
+                return Ok(new
                 {
-                    Ingredient = g.Key.IngredientName,
-                    Unit = g.Key.UnitName,
-                    TotalQuantity = g.Sum(ri => ri.quantity)
-                })
-                .OrderBy(g => g.Ingredient)
-                .ToList();
+                    success = true,
+                    data = groupedShoppingList,
+                    totalItems = groupedShoppingList.Count
+                });
+            }
+            catch (Exception ex)
+            {
+                // Log el error para debugging
+                Console.WriteLine($"Error en GetWeeklyShoppingList: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
 
-            return Ok(groupedShoppingList);
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Error interno del servidor",
+                    error = ex.Message
+                });
+            }
         }
-
         // ─────────────────────────────────────────────────────────────────────────────
-        // Crear una nueva lista de compras
+        // Crear una nueva lista de comprasl
         // ─────────────────────────────────────────────────────────────────────────────
         [HttpPost]
         public async Task<IActionResult> CreateShoppingList([FromBody] ShoppingList shoppingList)
@@ -193,9 +283,9 @@ namespace api.Controllers
 
             return NoContent();
         }
-    
-    //-----------------
-    [HttpPost("generate-list-from-menus")]
+
+        //-----------------
+        [HttpPost("generate-list-from-menus")]
         public async Task<IActionResult> GenerateListFromSelectedMenus([FromBody] List<int> menuIds)
         {
             var table = new DataTable();
@@ -222,6 +312,21 @@ namespace api.Controllers
             return Ok(result);
         }
 
+
+        [HttpGet("generate-list-from-user/{userId}")]
+        public async Task<IActionResult> GenerateListFromUser(int userId)
+        {
+            var parameter = new SqlParameter("@UserId", userId);
+
+            var result = await _context.SimpleShoppingListItems
+                .FromSqlRaw("EXEC GenerateShoppingListByUserWeeklyMenus @UserId", parameter)
+                .ToListAsync();
+
+            if (!result.Any())
+                return NotFound(new { message = "No se encontraron ingredientes para este usuario." });
+
+            return Ok(result);
+        }
     }
 }
 

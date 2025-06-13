@@ -90,7 +90,6 @@ namespace api.Data
                 .OnDelete(DeleteBehavior.Cascade);
 
 
-
             // Mapeo correcto para Unit_Measurement
             modelBuilder.Entity<Unit_Measurement>()
                 .ToTable("unit_measurement");
