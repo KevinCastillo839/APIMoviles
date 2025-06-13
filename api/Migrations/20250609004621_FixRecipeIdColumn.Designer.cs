@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using api.Data;
 
@@ -11,9 +12,11 @@ using api.Data;
 namespace api.Migrations
 {
     [DbContext(typeof(ApplicationDBContext))]
-    partial class ApplicationDBContextModelSnapshot : ModelSnapshot
+    [Migration("20250609004621_FixRecipeIdColumn")]
+    partial class FixRecipeIdColumn
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -365,9 +368,6 @@ namespace api.Migrations
                     b.Property<int>("menu_id")
                         .HasColumnType("int");
 
-                    b.Property<int>("recipe_id")
-                        .HasColumnType("int");
-
                     b.Property<DateTime?>("updated_at")
                         .HasColumnType("datetime2");
 
@@ -375,8 +375,6 @@ namespace api.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("id");
-
-                    b.HasIndex("recipe_id");
 
                     b.ToTable("shopping_list", (string)null);
                 });
@@ -587,17 +585,6 @@ namespace api.Migrations
                     b.Navigation("Recipe");
 
                     b.Navigation("Unit_Measurement");
-                });
-
-            modelBuilder.Entity("api.Models.ShoppingList", b =>
-                {
-                    b.HasOne("api.Models.Recipe", "Recipe")
-                        .WithMany()
-                        .HasForeignKey("recipe_id")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Recipe");
                 });
 
             modelBuilder.Entity("api.Models.User_Allergy", b =>

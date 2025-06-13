@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using api.Dtos.ShoppingList;
 using api.Models;
 using Api.Models;
 using Microsoft.EntityFrameworkCore;
@@ -98,7 +99,12 @@ namespace api.Data
                 .ToTable("shopping_list");
 
             base.OnModelCreating(modelBuilder);
-        }
+
+           
+            modelBuilder.Entity<SimpleShoppingListItem>().HasNoKey();
+
+            base.OnModelCreating(modelBuilder);
+                    }
 
         // DbSet properties
         public DbSet<Menu> Menu { get; set; }
@@ -115,6 +121,9 @@ namespace api.Data
         public DbSet<Recipe_Allergy> Recipe_Allergies { get; set; }
         public DbSet<ShoppingList> ShoppingLists { get; set; }
         public DbSet<Unit_Measurement> Unit_Measurements { get; set; }
+        public DbSet<SimpleShoppingListItem> SimpleShoppingListItems { get; set; }
+    
+        
     }
 }
 

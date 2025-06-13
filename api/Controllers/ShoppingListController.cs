@@ -1,9 +1,11 @@
 using System;
+using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using api.Data;
 using api.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 
 namespace api.Controllers
@@ -64,7 +66,7 @@ namespace api.Controllers
         // ─────────────────────────────────────────────────────────────────────────────
         // Obtener la lista de compras para un usuario y menú específico
         // ─────────────────────────────────────────────────────────────────────────────
-            [HttpGet("by-user/{userId}/menu/{menuId}")]
+        [HttpGet("by-user/{userId}/menu/{menuId}")]
         public async Task<IActionResult> GetShoppingListByUserAndMenu(int userId, int menuId)
         {
             Console.WriteLine($"Buscando listas de compras para userId={userId} y menuId={menuId}");
@@ -80,21 +82,21 @@ namespace api.Controllers
             return Ok(shoppingLists);
         }
 
-     
-       /* [HttpGet("by-user/{userId}/menu/{menuId}")]
-          public async Task<IActionResult> GetShoppingListByUserAndMenu(int userId, int menuId)
-          {
-              var shoppingLists = await _context.ShoppingLists
-                  .Where(sl => sl.user_id == userId && sl.menu_id == menuId)
-                  .OrderBy(sl => sl.created_at)
-                  .ToListAsync();
 
-              if (!shoppingLists.Any())
-                  return NotFound(new { message = "No se encontraron listas de compras para este usuario y menú" });
+        /* [HttpGet("by-user/{userId}/menu/{menuId}")]
+           public async Task<IActionResult> GetShoppingListByUserAndMenu(int userId, int menuId)
+           {
+               var shoppingLists = await _context.ShoppingLists
+                   .Where(sl => sl.user_id == userId && sl.menu_id == menuId)
+                   .OrderBy(sl => sl.created_at)
+                   .ToListAsync();
 
-              return Ok(shoppingLists);
-          }
-  */
+               if (!shoppingLists.Any())
+                   return NotFound(new { message = "No se encontraron listas de compras para este usuario y menú" });
+
+               return Ok(shoppingLists);
+           }
+   */
         // ─────────────────────────────────────────────────────────────────────────────
         // Obtener lista de compras semanal para un usuario
         // ─────────────────────────────────────────────────────────────────────────────
@@ -191,7 +193,37 @@ namespace api.Controllers
 
             return NoContent();
         }
+    
+    //-----------------
+    [HttpPost("generate-list-from-menus")]
+        public async Task<IActionResult> GenerateListFromSelectedMenus([FromBody] List<int> menuIds)
+        {
+            var table = new DataTable();
+            table.Columns.Add("MenuId", typeof(int));
+
+            foreach (var id in menuIds)
+            {
+                table.Rows.Add(id);
+            }
+
+            var parameter = new SqlParameter("@MenuIds", table)
+            {
+                SqlDbType = SqlDbType.Structured,
+                TypeName = "dbo.MenuIdTable"
+            };
+
+            var result = await _context.SimpleShoppingListItems
+                .FromSqlRaw("EXEC GenerateShoppingListByMenus @MenuIds", parameter)
+                .ToListAsync();
+
+            if (!result.Any())
+                return NotFound(new { message = "No se encontraron ingredientes para los menús seleccionados." });
+
+            return Ok(result);
+        }
+
     }
 }
+
 
 
