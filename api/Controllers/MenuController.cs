@@ -417,12 +417,12 @@ public async Task<IActionResult> GetLatestWeeklyMenuTable(int userId)
 }
 
 
-        [HttpPost("weekly/user/{user_id}/generate")]
+[HttpPost("weekly/user/{user_id}/generate")]
 public async Task<IActionResult> GenerateWeeklyMenu(int user_id)
 {
     try
     {
-        // 1. Obtener preferencias junto con metas y restricciones del usuario
+        // 1. Get user preferences including goals and restrictions
         var preference = await _context.user_preferences
             .Include(p => p.User_Dietary_Goals)
                 .ThenInclude(udg => udg.dietary_Goal)
@@ -430,56 +430,70 @@ public async Task<IActionResult> GenerateWeeklyMenu(int user_id)
                 .ThenInclude(udr => udr.dietary_Restriction)
             .FirstOrDefaultAsync(p => p.user_id == user_id);
 
-        if (preference == null)
-            return NotFound($"Preferencias no encontradas para el usuario {user_id}");
-
-        // 2. Obtener alergias del usuario (nombres en minúsculas)
+        // 2. Get user's allergies (lowercase names)
         var userAllergyNames = await _context.User_Allergies
             .Where(ua => ua.user_id == user_id)
             .Select(ua => ua.Allergy.name.ToLower())
             .ToListAsync();
 
-        // 3. Obtener todas las recetas con sus ingredientes
+        // 3. Get all recipes with ingredients
         var recipes = await _context.Recipes
             .Include(r => r.Recipe_Ingredients)
                 .ThenInclude(ri => ri.Ingredient)
             .ToListAsync();
 
-        // 4. Obtener todas las relaciones receta-alergia
+        // 4. Get all recipe-allergy relationships
         var recipeAllergies = await _context.Recipe_Allergies
             .Include(ra => ra.Allergy)
             .ToListAsync();
 
-        // 5. Obtener nombres de restricciones en minúscula
-        var restrictionNames = preference.User_Dietary_Restrictions
+        // 5. Get restriction names in lowercase, if preferences exist
+        var restrictionNames = preference?.User_Dietary_Restrictions
             .Select(udr => udr.dietary_Restriction.name.ToLower())
-            .ToList();
+            .ToList() ?? new List<string>();
 
-        // 6. Filtrar recetas válidas que no contengan alergias ni restricciones
-        var validRecipes = recipes.Where(r =>
+        List<Recipe> validRecipes;
+
+        if (preference != null)
         {
-            var allergiesForRecipe = recipeAllergies
-                .Where(ra => ra.recipe_id == r.id)
-                .Select(ra => ra.Allergy.name.ToLower())
-                .ToList();
+            // Filter recipes based on allergies and restrictions
+            validRecipes = recipes.Where(r =>
+            {
+                var allergiesForRecipe = recipeAllergies
+                    .Where(ra => ra.recipe_id == r.id)
+                    .Select(ra => ra.Allergy.name.ToLower())
+                    .ToList();
 
-            var ingredientNames = r.Recipe_Ingredients.Select(ri => ri.Ingredient.name.ToLower());
+                var ingredientNames = r.Recipe_Ingredients.Select(ri => ri.Ingredient.name.ToLower());
 
-            bool containsUserAllergy = allergiesForRecipe.Any(allergy => userAllergyNames.Contains(allergy)) ||
-                                       ingredientNames.Any(ing => userAllergyNames.Any(allergy => ing.Contains(allergy)));
+                bool containsUserAllergy = allergiesForRecipe.Any(allergy => userAllergyNames.Contains(allergy)) ||
+                                           ingredientNames.Any(ing => userAllergyNames.Any(allergy => ing.Contains(allergy)));
 
-            bool containsRestriction = ingredientNames.Any(ing => restrictionNames.Any(rn => ing.Contains(rn)));
+                bool containsRestriction = ingredientNames.Any(ing => restrictionNames.Any(rn => ing.Contains(rn)));
 
-            return !containsUserAllergy && !containsRestriction;
+                return !containsUserAllergy && !containsRestriction;
 
-            // Aquí puedes incluir también validación de metas si la necesitas
-            // && ValidateRecipeWithGoals(r, preference.User_Dietary_Goals);
-        }).ToList();
+                // You can also add goal validation here if needed
+                // && ValidateRecipeWithGoals(r, preference.User_Dietary_Goals);
+            }).ToList();
+
+            // If no valid recipes found, fallback to all recipes
+            if (!validRecipes.Any())
+            {
+                validRecipes = recipes;
+            }
+        }
+        else
+        {
+            // If no preferences, use all recipes
+            validRecipes = recipes;
+        }
 
         if (!validRecipes.Any())
-            return BadRequest("No hay recetas disponibles que respeten las preferencias, alergias y restricciones del usuario.");
+           return BadRequest(new { message = "No recipes available to generate the menu." });
 
-        // 7. Crear tabla Weekly_Menu_Table
+
+        // 6. Create Weekly_Menu_Table
         var weeklyMenuTable = new Weekly_Menu_Table
         {
             user_id = user_id,
@@ -488,60 +502,61 @@ public async Task<IActionResult> GenerateWeeklyMenu(int user_id)
         };
 
         _context.Weekly_Menu_Table.Add(weeklyMenuTable);
-        await _context.SaveChangesAsync(); // Para obtener el id generado
+        await _context.SaveChangesAsync(); // Get generated ID
 
-        // 8. Crear menú semanal (7 días)
+        // 7. Create weekly menu for 7 days
         var random = new Random();
-        string[] daysOfWeek = { "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo" };
+        string[] daysOfWeek = { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday" };
 
-       for (int i = 0; i < 7; i++)
-{
-    // Elegir 3 recetas aleatorias y distintas
-    var selectedRecipes = validRecipes.OrderBy(x => random.Next()).Take(3).ToList();
-
-    var menu = new Menu
-    {
-        name = $"Menú del día {i + 1}",
-        description = "Menú diseñado para apoyar tus metas nutricionales",
-        day_of_week = daysOfWeek[i],
-        created_at = DateTime.UtcNow,
-        user_id = user_id,
-        Menu_Recipes = selectedRecipes.Select(r => new Menu_Recipes
+        for (int i = 0; i < 7; i++)
         {
-            Recipe = r,
-            created_at = DateTime.UtcNow,
-            updated_at = DateTime.UtcNow
-        }).ToList()
-    };
+            // Pick 3 random distinct recipes
+            var selectedRecipes = validRecipes.OrderBy(x => random.Next()).Take(3).ToList();
 
-    _context.Menu.Add(menu);
-    await _context.SaveChangesAsync(); // Para obtener el id del menú
+            var menu = new Menu
+            {
+                name = $"Menu Day {i + 1}",
+                description = "Menu designed to support your nutritional goals",
+                day_of_week = daysOfWeek[i],
+                created_at = DateTime.UtcNow,
+                user_id = user_id,
+                Menu_Recipes = selectedRecipes.Select(r => new Menu_Recipes
+                {
+                    Recipe = r,
+                    created_at = DateTime.UtcNow,
+                    updated_at = DateTime.UtcNow
+                }).ToList()
+            };
 
-    var weeklyMenu = new Weekly_Menu
-    {
-        day_of_week = daysOfWeek[i],
-        menu_id = menu.id,
-        created_at = DateTime.UtcNow,
-        updated_at = DateTime.UtcNow,
-        menu_table_id = weeklyMenuTable.id
-    };
+            _context.Menu.Add(menu);
+            await _context.SaveChangesAsync(); // Get menu ID
 
-    _context.weekly_menu.Add(weeklyMenu);
-}
+            var weeklyMenu = new Weekly_Menu
+            {
+                day_of_week = daysOfWeek[i],
+                menu_id = menu.id,
+                created_at = DateTime.UtcNow,
+                updated_at = DateTime.UtcNow,
+                menu_table_id = weeklyMenuTable.id
+            };
 
+            _context.weekly_menu.Add(weeklyMenu);
+        }
 
-        // 9. Guardar todos los Weekly_Menu
+        // 8. Save all Weekly_Menu records
         await _context.SaveChangesAsync();
 
-        return Ok("Menú semanal generado exitosamente.");
+      return Ok(new { message = "Weekly menu generated successfully." });
+
     }
     catch (Exception ex)
     {
-        var innerExceptionMessage = ex.InnerException?.Message;
-        var innerExceptionStackTrace = ex.InnerException?.StackTrace;
-        return StatusCode(500, $"Error en el servidor: {ex.Message} - {innerExceptionMessage} - StackTrace: {innerExceptionStackTrace}");
+        var innerMessage = ex.InnerException?.Message;
+        var innerStackTrace = ex.InnerException?.StackTrace;
+        return StatusCode(500, $"Server error: {ex.Message} - {innerMessage} - StackTrace: {innerStackTrace}");
     }
 }
+
 
 //
 
