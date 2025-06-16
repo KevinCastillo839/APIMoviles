@@ -11,6 +11,7 @@ namespace api.Data
     public class ApplicationDBContext : DbContext
     {
         public ApplicationDBContext(DbContextOptions dbContextOptions) : base(dbContextOptions) { }
+    
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<Weekly_Menu>()
@@ -90,8 +91,10 @@ namespace api.Data
                 .HasForeignKey(m => m.user_id);
             // Relación basada en user_id
 
-
-
+            modelBuilder.Entity<UserPreference>(entity =>
+            {
+                entity.HasNoKey(); // Define que esta entidad no tiene clave primaria
+            });
             base.OnModelCreating(modelBuilder);
         }
 
@@ -119,6 +122,8 @@ namespace api.Data
         public DbSet<Dietary_Restriction> Dietary_Restrictions { get; set; }
         public DbSet<User_Dietary_Restriction> User_Dietary_Restrictions { get; set; }
         public DbSet<User_Dietary_Goal> User_Dietary_Goals { get; set; }
+        public DbSet<UserPreference> UserPreferences { get; set; }
+
 
     }
 }

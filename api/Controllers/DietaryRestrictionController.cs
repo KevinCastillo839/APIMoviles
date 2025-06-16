@@ -35,36 +35,82 @@ namespace api.Controllers
             }
         }
         [HttpPost]
-       public async Task<IActionResult> AddDietaryRestrictions([FromBody] CreateUserDietaryRestrictionRequestDto request)
-{
-    if (request == null || request.user_preference_id <= 0 || !request.restriction_ids.Any())
-    {
-        return BadRequest(new { message = "Datos inválidos en la solicitud." });
-    }
+        public async Task<IActionResult> AddDietaryRestrictions([FromBody] CreateUserDietaryRestrictionRequestDto request)
+        {
+            if (request == null || request.user_preference_id <= 0 || !request.restriction_ids.Any())
+            {
+                return BadRequest(new { message = "Datos inválidos en la solicitud." });
+            }
 
-    var preference = await _context.user_preferences.FindAsync(request.user_preference_id);
-    if (preference == null)
-    {
-        return NotFound(new { message = "Preferencia no encontrada." });
-    }
+            var preference = await _context.user_preferences.FindAsync(request.user_preference_id);
+            if (preference == null)
+            {
+                return NotFound(new { message = "Preferencia no encontrada." });
+            }
 
-    var restrictions = request.restriction_ids.Select(id => new User_Dietary_Restriction
-    {
-        user_preference_id = request.user_preference_id,
-        restriction_id = id
-    });
+            var restrictions = request.restriction_ids.Select(id => new User_Dietary_Restriction
+            {
+                user_preference_id = request.user_preference_id,
+                restriction_id = id
+            });
 
-    try
-    {
-        await _context.User_Dietary_Restrictions.AddRangeAsync(restrictions);
-        await _context.SaveChangesAsync();
-        return Ok(new { message = "Restricciones agregadas exitosamente." });
-    }
-    catch (Exception ex)
-    {
-        return StatusCode(500, new { message = $"Error al agregar restricciones: {ex.Message}" });
-    }
-}
+            try
+            {
+                await _context.User_Dietary_Restrictions.AddRangeAsync(restrictions);
+                await _context.SaveChangesAsync();
+                return Ok(new { message = "Restricciones agregadas exitosamente." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = $"Error al agregar restricciones: {ex.Message}" });
+            }
+        }
+
+        [HttpPut]
+        public async Task<IActionResult> UpdateDietaryRestrictions([FromBody] CreateUserDietaryRestrictionRequestDto request)
+        {
+            if (request == null || request.user_preference_id <= 0 || !request.restriction_ids.Any())
+            {
+                return BadRequest(new { message = "Datos inválidos en la solicitud." });
+            }
+
+            // Verificar si existe la preferencia
+            var preference = await _context.user_preferences.FindAsync(request.user_preference_id);
+            if (preference == null)
+            {
+                return NotFound(new { message = "Preferencia no encontrada." });
+            }
+
+            try
+            {
+                // Obtener las restricciones actuales para la preferencia
+                var existingRestrictions = _context.User_Dietary_Restrictions
+                    .Where(r => r.user_preference_id == request.user_preference_id);
+
+                // Eliminar las restricciones existentes
+                _context.User_Dietary_Restrictions.RemoveRange(existingRestrictions);
+
+                // Crear las nuevas restricciones
+                var newRestrictions = request.restriction_ids.Select(id => new User_Dietary_Restriction
+                {
+                    user_preference_id = request.user_preference_id,
+                    restriction_id = id
+                });
+
+                // Agregar las nuevas restricciones
+                await _context.User_Dietary_Restrictions.AddRangeAsync(newRestrictions);
+
+                // Guardar los cambios
+                await _context.SaveChangesAsync();
+
+                return Ok(new { message = "Restricciones actualizadas exitosamente." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = $"Error al actualizar restricciones: {ex.Message}" });
+            }
+        }
+
 
 
     }
