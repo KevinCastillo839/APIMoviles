@@ -49,6 +49,18 @@ namespace api.Data
                 .WithMany()
                 .HasForeignKey(ua => ua.user_id);
 
+            modelBuilder.Entity<Recipe>(entity =>
+                {
+                    // Mapea la propiedad user_id a la columna user_id (ya es igual, pero aseguras)
+                    entity.Property(e => e.user_id).HasColumnName("user_id");
+
+                    // Configura la relación con User
+                    entity.HasOne(r => r.User)
+                        .WithMany() // si no tienes colección de recetas en User, sino cambia por .WithMany(u => u.Recipes)
+                        .HasForeignKey(r => r.user_id)
+                        .IsRequired(false); // permite nulo
+                });
+
             modelBuilder.Entity<Preference>()
                 .HasOne(p => p.User)
                 .WithMany()
