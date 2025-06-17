@@ -15,6 +15,7 @@ namespace api.Controllers
 {
     [Route("api/dietary_goal")]
     [ApiController]
+    [Authorize] 
 
     public class DietaryGoalController : ControllerBase
     {
@@ -78,7 +79,7 @@ namespace api.Controllers
                 return BadRequest(new { error = "Datos inválidos en la solicitud." });
             }
 
-            // Verificar si existe la preferencia
+            // Check if the preference exists
             var preference = await _context.user_preferences.FindAsync(request.user_preference_id);
             if (preference == null)
             {
@@ -87,7 +88,7 @@ namespace api.Controllers
 
             try
             {
-                // Eliminar cualquier objetivo existente para la preferencia
+                // Remove any existing targets for the preference
                 var existingGoal = _context.User_Dietary_Goals
                     .FirstOrDefault(g => g.user_preference_id == request.user_preference_id);
 
@@ -96,7 +97,7 @@ namespace api.Controllers
                     _context.User_Dietary_Goals.Remove(existingGoal);
                 }
 
-                // Crear el nuevo objetivo
+                // Create the new goal
                 var newGoal = new User_Dietary_Goal
                 {
                     user_preference_id = request.user_preference_id,
@@ -105,7 +106,7 @@ namespace api.Controllers
 
                 _context.User_Dietary_Goals.Add(newGoal);
 
-                // Guardar los cambios
+                // Save changes
                 await _context.SaveChangesAsync();
 
                 return Ok(new { message = "Objetivo actualizado exitosamente." });
@@ -121,14 +122,13 @@ namespace api.Controllers
         {
             try
             {
-                // Llamada al procedimiento almacenado
                 var preferences = await _context.UserPreferences
                     .FromSqlInterpolated($"EXEC GetUserPreferences @UserId = {userId}")
                     .ToListAsync();
-                
+
                 var preferenceId = preferences.FirstOrDefault()?.user_preference_id;
 
-                // Organizar los resultados
+                // Organize the results
                 var restrictions = preferences
                     .Where(p => p.restriction_id != null)
                     .Select(p => new
@@ -145,9 +145,9 @@ namespace api.Controllers
                         id = p.goal_id,
                         goal = p.goal
                     })
-                    .FirstOrDefault(); // Solo un objetivo
+                    .FirstOrDefault(); // Just one goal
 
-                // Estructura del resultado
+                // Structure of the result
                 var result = new
                 {
                     UserId = userId,
@@ -163,8 +163,6 @@ namespace api.Controllers
                 return StatusCode(500, $"Ocurrió un error al obtener las preferencias del usuario: {ex.Message}");
             }
         }
-
-
 
     }
 }

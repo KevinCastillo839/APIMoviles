@@ -10,6 +10,7 @@ namespace api.Controllers
 {
     [Route("api/dietary_restriction")]
     [ApiController]
+    [Authorize] 
 
     public class DietaryRestrictionController : ControllerBase
     {
@@ -74,7 +75,7 @@ namespace api.Controllers
                 return BadRequest(new { message = "Datos inválidos en la solicitud." });
             }
 
-            // Verificar si existe la preferencia
+            // Check if the preference exists
             var preference = await _context.user_preferences.FindAsync(request.user_preference_id);
             if (preference == null)
             {
@@ -83,24 +84,24 @@ namespace api.Controllers
 
             try
             {
-                // Obtener las restricciones actuales para la preferencia
+                // Get the current restrictions for the preference
                 var existingRestrictions = _context.User_Dietary_Restrictions
                     .Where(r => r.user_preference_id == request.user_preference_id);
 
-                // Eliminar las restricciones existentes
+                // Remove existing restrictions
                 _context.User_Dietary_Restrictions.RemoveRange(existingRestrictions);
 
-                // Crear las nuevas restricciones
+                // Create the new restrictions
                 var newRestrictions = request.restriction_ids.Select(id => new User_Dietary_Restriction
                 {
                     user_preference_id = request.user_preference_id,
                     restriction_id = id
                 });
 
-                // Agregar las nuevas restricciones
+                // Add the new restrictions
                 await _context.User_Dietary_Restrictions.AddRangeAsync(newRestrictions);
 
-                // Guardar los cambios
+                // Save changes
                 await _context.SaveChangesAsync();
 
                 return Ok(new { message = "Restricciones actualizadas exitosamente." });
@@ -110,8 +111,6 @@ namespace api.Controllers
                 return StatusCode(500, new { message = $"Error al actualizar restricciones: {ex.Message}" });
             }
         }
-
-
 
     }
 }
