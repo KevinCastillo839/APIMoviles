@@ -84,7 +84,7 @@ namespace api.Controllers
 
       
       
-       [HttpGet("by-user/{userId}")]
+      /* [HttpGet("by-user/{userId}")]
         public async Task<IActionResult> GetWeeklyShoppingList(int userId)
         {
             try
@@ -176,17 +176,14 @@ namespace api.Controllers
                     error = ex.Message
                 });
             }
-        }
+        }*/
 
-/*
-        //Probar Método
-
-    [HttpGet("by-user/{userId}")]
-    public async Task<IActionResult> GetWeeklyShoppingList(int userId)
+[HttpGet("by-user/{userId}")]
+public async Task<IActionResult> GetWeeklyShoppingList(int userId)
+{
+    try
     {
-        try
-    {
-        // 1. Obtener el último menú semanal del usuario desde Weekly_Menu_Table (solo el más reciente por id)
+        // 1. Obtener el último menú semanal
         var latestWeeklyMenu = await _context.Weekly_Menu_Table
             .Where(wmt => wmt.user_id == userId)
             .OrderByDescending(wmt => wmt.id)
@@ -195,7 +192,7 @@ namespace api.Controllers
         if (latestWeeklyMenu == null)
             return NotFound(new { message = "No se encontró menú semanal para este usuario." });
 
-        // 2. Obtener los menu_id vinculados a ese menú semanal desde weekly_menu
+        // 2. Obtener menu_ids
         var menuIds = await _context.weekly_menu
             .Where(wm => wm.menu_table_id == latestWeeklyMenu.id)
             .Select(wm => wm.menu_id)
@@ -205,7 +202,7 @@ namespace api.Controllers
         if (!menuIds.Any())
             return NotFound(new { message = "No se encontraron menús diarios asociados al menú semanal." });
 
-        // 3. Obtener los recipe_id vinculados a esos menu_id desde menu_recipes
+        // 3. Obtener recipe_ids
         var recipeIds = await _context.menu_recipes
             .Where(mr => menuIds.Contains(mr.menu_id))
             .Select(mr => mr.recipe_id)
@@ -215,7 +212,7 @@ namespace api.Controllers
         if (!recipeIds.Any())
             return NotFound(new { message = "No se encontraron recetas asociadas al menú semanal." });
 
-        // 4. Obtener ingredientes de las recetas
+        // 4. Obtener ingredientes
         var recipeIngredientsData = await _context.Recipe_Ingredients
             .Where(ri => recipeIds.Contains(ri.RecipeId))
             .Select(ri => new
@@ -229,28 +226,61 @@ namespace api.Controllers
         if (!recipeIngredientsData.Any())
             return NotFound(new { message = "No se encontraron ingredientes para las recetas del menú." });
 
-        // 5. Obtener nombres de ingredientes
+        // 5. Obtener nombres ingredientes
         var ingredientIds = recipeIngredientsData.Select(ri => ri.IngredientId).Distinct().ToList();
         var ingredients = await _context.Ingredients
             .Where(i => ingredientIds.Contains(i.id))
             .Select(i => new { i.id, i.name })
             .ToDictionaryAsync(i => i.id, i => i.name);
 
-        // 6. Obtener nombres de unidades de medida
+        // 6. Obtener nombres unidades
         var unitIds = recipeIngredientsData.Select(ri => ri.UnitId).Distinct().ToList();
         var units = await _context.Unit_Measurements
             .Where(u => unitIds.Contains(u.id))
             .Select(u => new { u.id, u.name })
             .ToDictionaryAsync(u => u.id, u => u.name);
 
-        // 7. Agrupar por ingrediente + unidad y sumar cantidades
+        // Validaciones extra para encontrar claves faltantes
+        var missingIngredientIds = ingredientIds.Except(ingredients.Keys).ToList();
+        var missingUnitIds = unitIds.Except(units.Keys).ToList();
+
+        if (missingIngredientIds.Any())
+            Console.WriteLine($"IDs de ingredientes faltantes: {string.Join(", ", missingIngredientIds)}");
+
+        if (missingUnitIds.Any())
+            Console.WriteLine($"IDs de unidades faltantes: {string.Join(", ", missingUnitIds)}");
+
+        // 7. Agrupar con protección contra nulls
         var groupedShoppingList = recipeIngredientsData
             .GroupBy(ri => new { ri.IngredientId, ri.UnitId })
-            .Select(g => new
+            .Select(g =>
             {
-                Ingredient = ingredients.GetValueOrDefault(g.Key.IngredientId, "Ingrediente desconocido"),
-                Unit = units.GetValueOrDefault(g.Key.UnitId, "Unidad desconocida"),
-                TotalQuantity = g.Sum(ri => ri.Quantity)
+                string ingredientName = null;
+                ingredients.TryGetValue(g.Key.IngredientId, out ingredientName);
+                if (string.IsNullOrWhiteSpace(ingredientName))
+                    ingredientName = "Ingrediente desconocido";
+
+                string unitName = null;
+                units.TryGetValue(g.Key.UnitId, out unitName);
+                if (string.IsNullOrWhiteSpace(unitName))
+                    unitName = "Unidad desconocida";
+
+                decimal totalQuantity = 0;
+                try
+                {
+                    totalQuantity = g.Sum(ri => ri.Quantity);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error sumando cantidades para ingrediente {ingredientName}: {ex.Message}");
+                }
+
+                return new
+                {
+                    Ingredient = ingredientName,
+                    Unit = unitName,
+                    TotalQuantity = totalQuantity
+                };
             })
             .OrderBy(g => g.Ingredient)
             .ToList();
@@ -265,7 +295,7 @@ namespace api.Controllers
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"Error en GetWeeklyShoppingList: {ex.Message}");
+        Console.WriteLine($"Error en GetWeeklyShoppingList: {ex}");
         return StatusCode(500, new
         {
             success = false,
@@ -273,17 +303,7 @@ namespace api.Controllers
             error = ex.Message
         });
     }
-}*/
-
-
-
-        
-
-
-
-
-
-
+}
 
 
 
