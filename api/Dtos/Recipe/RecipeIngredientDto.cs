@@ -9,7 +9,7 @@ namespace api.Dtos.Recipe
         public int ingredient_id { get; set; }
         public int recipe_id { get; set; }
         public IngredientDto Ingredient { get; set; }  // Relación con Ingredient
-        public string quantity { get; set; } // Cambiado a double para permitir decimales
+        public decimal quantity { get; set; } // Cambiado a double para permitir decimales
     }
 }
 

@@ -17,7 +17,7 @@ namespace api.Models
         [ForeignKey("ingredient_id")]
         public Ingredient Ingredient { get; set; }  // Relación con Ingredient
 
-        public string quantity { get; set; }
+        public decimal quantity { get; set; }
 
         public DateTime created_at { get; set; }
         public DateTime updated_at { get; set; }
