@@ -123,6 +123,7 @@ namespace api.Data
         public DbSet<User_Dietary_Restriction> User_Dietary_Restrictions { get; set; }
         public DbSet<User_Dietary_Goal> User_Dietary_Goals { get; set; }
         public DbSet<UserPreference> UserPreferences { get; set; }
+        public DbSet<Unit_Measurement> unit_measurement { get; set; }
 
 
     }

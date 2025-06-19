@@ -13,7 +13,7 @@ namespace api.Models
         public Recipe Recipe { get; set; }  // Relación con Recipe
 
         public int ingredient_id { get; set; }  // Clave foránea que hace referencia a Ingredient
-
+public int? unit_measurement_id { get; set; }
         [ForeignKey("ingredient_id")]
         public Ingredient Ingredient { get; set; }  // Relación con Ingredient
 

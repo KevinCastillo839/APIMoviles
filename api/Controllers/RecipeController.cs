@@ -289,6 +289,7 @@ public async Task<IActionResult> CreateMyRecipe([FromForm] CreateRecipeRequestDt
         recipe_id = recipe.id,
         ingredient_id = ri.ingredient_id,
         quantity = ri.quantity,
+        unit_measurement_id = ri.unit_measurement_id,
         created_at = ri.created_at,
         updated_at = ri.updated_at
     }).ToList();
@@ -365,6 +366,7 @@ public async Task<IActionResult> UpdateRecipe(int id, [FromForm] UpdateRecipeReq
             recipe_id = recipe.id,
             ingredient_id = ri.ingredient_id,
             quantity = ri.quantity,
+            unit_measurement_id = ri.unit_measurement_id,
             created_at = DateTime.UtcNow,
             updated_at = DateTime.UtcNow
         }).ToList();

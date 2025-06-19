@@ -14,7 +14,8 @@ namespace api.Dtos.Recipe
 
         public decimal quantity { get; set; } 
 
-
+        public int? unit_measurement_id { get; set; }
+        
         [Required(ErrorMessage = "La fecha de creación es obligatoria.")]
         public DateTime created_at { get; set; }
 
