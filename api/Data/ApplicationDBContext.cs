@@ -77,7 +77,7 @@ namespace api.Data
                 .WithMany()
                 .HasForeignKey(m => m.user_id);
 
-            // Aseguramos el nombre correcto en la base de datos si es necesario
+            
             modelBuilder.Entity<Menu>()
                 .Property(m => m.user_id)
                 .HasColumnName("user_id");
@@ -90,7 +90,7 @@ namespace api.Data
                 .OnDelete(DeleteBehavior.Cascade);
 
 
-            // Mapeo correcto para Unit_Measurement
+            //Correct mapping for Unit_Measurement
             modelBuilder.Entity<Unit_Measurement>()
                 .ToTable("unit_measurement");
 
