@@ -7,15 +7,8 @@ namespace api.Dtos.Recipe
     {
         public int id { get; set; }
         public int ingredient_id { get; set; }
-<<<<<<< HEAD
-        
-       public int recipe_id { get; set; }
-
-        public int unit_measurement_id { get; set; } //
-=======
         public int recipe_id { get; set; }
         public int? unit_measurement_id { get; set; }
->>>>>>> origin/main
         public IngredientDto Ingredient { get; set; }  // Relación con Ingredient
         public decimal quantity { get; set; } // Cambiado a double para permitir decimales
     }

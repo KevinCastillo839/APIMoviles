@@ -28,77 +28,13 @@ namespace api.Controllers
 
         public RecipeController(ApplicationDBContext context)
         {
-<<<<<<< HEAD
-            id = recipe.id,
-            name = recipe.name,
-            instructions = recipe.instructions,
-            category = recipe.category,
-            preparation_time = recipe.preparation_time,
-            image_url = recipe.image_url,
-            created_at = recipe.created_at,
-            updated_at = recipe.updated_at,
-            Recipe_Ingredients = recipe.Recipe_Ingredients
-                .Select(ri => new RecipeIngredientDto
-                {
-                    id = ri.id,
-                    recipe_id = ri.RecipeId, //recipe_id
-                    ingredient_id = ri.ingredient_id,
-                    quantity = ri.quantity,
-                    Ingredient = new IngredientDto
-                    {
-
-                        id = ri.Ingredient.id,
-                        name = ri.Ingredient.name,
-                        description = ri.Ingredient.description
-                    }
-                }).ToList()
-        }).ToList();
-
-        // It returns the list of mapped recipes.
-        return Ok(recipesDto);
-    }
-
-    // Method to get a recipe by its ID.
-    [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(int id)
-    {
-        // Searches for a specific recipe along with its related ingredients.
-        var recipe = await _context.Recipes
-            .Include(r => r.Recipe_Ingredients)
-            .ThenInclude(ri => ri.Ingredient)
-            .FirstOrDefaultAsync(r => r.id == id);
-
-        // If the recipe is not found, it returns an error message.
-        if (recipe == null)
-        {
-            return NotFound(new { message = "Receta no encontrada" });
-=======
             _context = context;
->>>>>>> origin/main
         }
 
         // Method to get all recipes
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-<<<<<<< HEAD
-            id = recipe.id,
-            name = recipe.name,
-            instructions = recipe.instructions,
-            category = recipe.category,
-            preparation_time = recipe.preparation_time,
-            image_url = recipe.image_url,
-            created_at = recipe.created_at,
-            updated_at = recipe.updated_at,
-            Recipe_Ingredients = recipe.Recipe_Ingredients
-                .Select(ri => new RecipeIngredientDto
-                {
-                    id = ri.id,
-                    recipe_id = ri.RecipeId, //recipe_id
-                    ingredient_id = ri.ingredient_id,
-                    quantity = ri.quantity,
-                    Ingredient = new IngredientDto
-=======
 
             // It retrieves all the recipes with their related ingredients.
             var recipes = await _context.Recipes
@@ -120,10 +56,9 @@ namespace api.Controllers
                 updated_at = recipe.updated_at,
                 Recipe_Ingredients = recipe.Recipe_Ingredients
                     .Select(ri => new RecipeIngredientDto
->>>>>>> origin/main
                     {
                         id = ri.id,
-                        recipe_id = ri.recipe_id,
+                        recipe_id = ri.RecipeId,
                         ingredient_id = ri.ingredient_id,
                         quantity = ri.quantity,
                         Ingredient = new IngredientDto
@@ -136,11 +71,6 @@ namespace api.Controllers
                     }).ToList()
             }).ToList();
 
-<<<<<<< HEAD
-    //Method to create a new recipe.
-[HttpPost]
-public async Task<IActionResult> CreateRecipe([FromForm] CreateRecipeRequestDto request)
-=======
             // It returns the list of mapped recipes.
             return Ok(recipesDto);
         }
@@ -170,7 +100,7 @@ public async Task<IActionResult> CreateRecipe([FromForm] CreateRecipeRequestDto 
                     .Select(ri => new RecipeIngredientDto
                     {
                         id = ri.id,
-                        recipe_id = ri.recipe_id,
+                        recipe_id = ri.RecipeId,
                         ingredient_id = ri.ingredient_id,
                         quantity = ri.quantity,
                         Ingredient = new IngredientDto
@@ -216,7 +146,7 @@ public async Task<IActionResult> CreateRecipe([FromForm] CreateRecipeRequestDto 
                     .Select(ri => new RecipeIngredientDto
                     {
                         id = ri.id,
-                        recipe_id = ri.recipe_id,
+                        recipe_id = ri.RecipeId,
                         ingredient_id = ri.ingredient_id,
                         quantity = ri.quantity,
                         Ingredient = new IngredientDto
@@ -287,7 +217,7 @@ public async Task<IActionResult> CreateRecipe([FromForm] CreateRecipeRequestDto 
 
             var mappedIngredients = recipeIngredients.Select(ri => new Recipe_Ingredient
             {
-                recipe_id = recipe.id,
+                RecipeId = recipe.id,
                 ingredient_id = ri.ingredient_id,
                 quantity = ri.quantity,
                 created_at = ri.created_at,
@@ -303,7 +233,6 @@ public async Task<IActionResult> CreateRecipe([FromForm] CreateRecipeRequestDto 
 
 [HttpPost("createmyrecipe")]
 public async Task<IActionResult> CreateMyRecipe([FromForm] CreateRecipeRequestDto request)
->>>>>>> origin/main
 {
     if (!ModelState.IsValid)
         return BadRequest(ModelState);

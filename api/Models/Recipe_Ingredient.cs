@@ -9,7 +9,7 @@ namespace api.Models
 
         [Column("recipe_id")]
         public int RecipeId { get; set; }
-
+    public Recipe Recipe { get; set; }
         public int ingredient_id { get; set; }  // Clave foránea que hace referencia a Ingredient
 public int? unit_measurement_id { get; set; }
         [ForeignKey("ingredient_id")]

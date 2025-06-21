@@ -393,7 +393,7 @@ public async Task<IActionResult> GetLatestWeeklyMenuTable(int userId)
                         recipe_ingredients = mr.Recipe.Recipe_Ingredients.Select(ri => new
                         {
                             id = ri.id,
-                            recipe_id = ri.recipe_id,
+                            recipe_id = ri.RecipeId,
                             ingredient_id = ri.ingredient_id,
                             quantity = ri.quantity,
                             ingredient = new

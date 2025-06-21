@@ -22,64 +22,7 @@ namespace api.Controllers
         }
 
         // Retrieve the shopping list by grouping ingredients by name and unit.
-      
-        [HttpGet("by-menu/{menuId}")]
-        public async Task<IActionResult> GetShoppingListByMenu(int menuId)
-        {
-            var shoppingLists = await _context.ShoppingLists
-                .Where(sl => sl.menu_id == menuId)
-                .OrderBy(sl => sl.created_at)
-                .ToListAsync();
-
-            if (!shoppingLists.Any())
-                return NotFound(new { message = "No se encontraron listas de compras para el menú seleccionado" });
-
-            var recipeIds = await _context.menu_recipes
-                .Where(mr => mr.menu_id == menuId)
-                .Select(mr => mr.recipe_id)
-                .ToListAsync();
-
-            if (!recipeIds.Any())
-                return NotFound(new { message = "No se encontraron recetas asociadas a este menú" });
-
-            var recipeIngredients = await _context.Recipe_Ingredients
-                .Include(ri => ri.Ingredient)
-                .Include(ri => ri.Unit_Measurement)
-                .Where(ri => recipeIds.Contains(ri.RecipeId))
-                .ToListAsync();
-
-            var groupedShoppingList = recipeIngredients
-                .GroupBy(ri => new { IngredientName = ri.Ingredient.name, UnitName = ri.Unit_Measurement.name })
-                .Select(g => new
-                {
-                    IngredientName = g.Key.IngredientName,
-                    Unit = g.Key.UnitName,
-                    TotalQuantity = g.Sum(ri => ri.quantity)
-                })
-                .OrderBy(g => g.IngredientName)
-                .ToList();
-
-            return Ok(groupedShoppingList);
-        }
-
-        // Retrieve the shopping list for a specific user and menu.
-       
-        [HttpGet("by-user/{userId}/menu/{menuId}")]
-        public async Task<IActionResult> GetShoppingListByUserAndMenu(int userId, int menuId)
-        {
-            Console.WriteLine($"Buscando listas de compras para userId={userId} y menuId={menuId}");
-
-            var shoppingLists = await _context.ShoppingLists
-                .Where(sl => sl.user_id == userId && sl.menu_id == menuId)
-                .OrderBy(sl => sl.created_at)
-                .ToListAsync();
-
-            if (!shoppingLists.Any())
-                return NotFound(new { message = "No se encontraron listas de compras para este usuario y menú" });
-
-            return Ok(shoppingLists);
-        }
-
+     
       
 [HttpGet("by-user/{userId}")]
 public async Task<IActionResult> GetWeeklyShoppingList(int userId)
@@ -138,14 +81,14 @@ public async Task<IActionResult> GetWeeklyShoppingList(int userId)
 
         // 6. Get unit names
         var unitIds = recipeIngredientsData.Select(ri => ri.UnitId).Distinct().ToList();
-        var units = await _context.Unit_Measurements
+        var units = await _context.unit_measurement
             .Where(u => unitIds.Contains(u.id))
             .Select(u => new { u.id, u.name })
             .ToDictionaryAsync(u => u.id, u => u.name);
 
         // Extended validation to identify missing keys
         var missingIngredientIds = ingredientIds.Except(ingredients.Keys).ToList();
-        var missingUnitIds = unitIds.Except(units.Keys).ToList();
+        var missingUnitIds = unitIds.Where(id => id.HasValue).Select(id => id.Value).Except(units.Keys).ToList();
 
         if (missingIngredientIds.Any())
             Console.WriteLine($"IDs de ingredientes faltantes: {string.Join(", ", missingIngredientIds)}");
@@ -164,7 +107,7 @@ public async Task<IActionResult> GetWeeklyShoppingList(int userId)
                     ingredientName = "Ingrediente desconocido";
 
                 string unitName = null;
-                units.TryGetValue(g.Key.UnitId, out unitName);
+                units.TryGetValue((int)g.Key.UnitId, out unitName);
                 if (string.IsNullOrWhiteSpace(unitName))
                     unitName = "Unidad desconocida";
 
@@ -208,102 +151,6 @@ public async Task<IActionResult> GetWeeklyShoppingList(int userId)
 }
 
         // ─────────────────────────────────────────────────────────────────────────────
-        //Create a new shopping list
-        // ─────────────────────────────────────────────────────────────────────────────
-        [HttpPost]
-        public async Task<IActionResult> CreateShoppingList([FromBody] ShoppingList shoppingList)
-        {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
-            shoppingList.created_at = DateTime.UtcNow;
-            shoppingList.updated_at = DateTime.UtcNow;
-
-            _context.ShoppingLists.Add(shoppingList);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(GetShoppingListByMenu), new { menuId = shoppingList.menu_id }, shoppingList);
-        }
-
-        // ─────────────────────────────────────────────────────────────────────────────
-        // Update an existing shopping list
-        // ─────────────────────────────────────────────────────────────────────────────
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateShoppingList(int id, [FromBody] ShoppingList shoppingList)
-        {
-            if (id != shoppingList.id)
-                return BadRequest(new { message = "El ID de la lista de compras no coincide" });
-
-            var existingShoppingList = await _context.ShoppingLists.FindAsync(id);
-            if (existingShoppingList == null)
-                return NotFound(new { message = "Lista de compras no encontrada" });
-
-            shoppingList.updated_at = DateTime.UtcNow;
-            _context.Entry(existingShoppingList).CurrentValues.SetValues(shoppingList);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
-        }
-
-        // ─────────────────────────────────────────────────────────────────────────────
-        //Delete a shopping list
-        // ─────────────────────────────────────────────────────────────────────────────
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteShoppingList(int id)
-        {
-            var shoppingList = await _context.ShoppingLists.FindAsync(id);
-            if (shoppingList == null)
-                return NotFound(new { message = "Lista de compras no encontrada" });
-
-            _context.ShoppingLists.Remove(shoppingList);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
-        }
-
-       
-        [HttpPost("generate-list-from-menus")]
-        public async Task<IActionResult> GenerateListFromSelectedMenus([FromBody] List<int> menuIds)
-        {
-            var table = new DataTable();
-            table.Columns.Add("MenuId", typeof(int));
-
-            foreach (var id in menuIds)
-            {
-                table.Rows.Add(id);
-            }
-
-            var parameter = new SqlParameter("@MenuIds", table)
-            {
-                SqlDbType = SqlDbType.Structured,
-                TypeName = "dbo.MenuIdTable"
-            };
-
-            var result = await _context.SimpleShoppingListItems
-                .FromSqlRaw("EXEC GenerateShoppingListByMenus @MenuIds", parameter)
-                .ToListAsync();
-
-            if (!result.Any())
-                return NotFound(new { message = "No se encontraron ingredientes para los menús seleccionados." });
-
-            return Ok(result);
-        }
-
-
-           [HttpGet("generate-list-from-user/{userId}")]
-           public async Task<IActionResult> GenerateListFromUser(int userId)
-           {
-               var parameter = new SqlParameter("@UserId", userId);
-
-               var result = await _context.SimpleShoppingListItems
-                   .FromSqlRaw("EXEC GenerateShoppingListByUserWeeklyMenus @UserId", parameter)
-                   .ToListAsync();
-
-               if (!result.Any())
-                   return NotFound(new { message = "No se encontraron ingredientes para este usuario." });
-
-               return Ok(result);
-           }
 
        }
 }
