@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using api.Data;
 
@@ -11,9 +12,11 @@ using api.Data;
 namespace api.Migrations
 {
     [DbContext(typeof(ApplicationDBContext))]
-    partial class ApplicationDBContextModelSnapshot : ModelSnapshot
+    [Migration("20250605144427_UpdateQuantityField")]
+    partial class UpdateQuantityField
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -316,35 +319,29 @@ namespace api.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("id"));
 
-                    b.Property<int>("RecipeId")
-                        .HasColumnType("int")
-                        .HasColumnName("recipe_id");
-
                     b.Property<DateTime>("created_at")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("created_at");
+                        .HasColumnType("datetime2");
 
                     b.Property<int>("ingredient_id")
-                        .HasColumnType("int")
-                        .HasColumnName("ingredient_id");
+                        .HasColumnType("int");
 
                     b.Property<decimal>("quantity")
-                        .HasColumnType("decimal(18,2)")
-                        .HasColumnName("quantity");
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("recipe_id")
+                        .HasColumnType("int");
 
                     b.Property<int>("unit_measurement_id")
-                        .HasColumnType("int")
-                        .HasColumnName("unit_measurement_id");
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("updated_at")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("updated_at");
+                        .HasColumnType("datetime2");
 
                     b.HasKey("id");
 
-                    b.HasIndex("RecipeId");
-
                     b.HasIndex("ingredient_id");
+
+                    b.HasIndex("recipe_id");
 
                     b.HasIndex("unit_measurement_id");
 
@@ -365,9 +362,6 @@ namespace api.Migrations
                     b.Property<int>("menu_id")
                         .HasColumnType("int");
 
-                    b.Property<int>("recipe_id")
-                        .HasColumnType("int");
-
                     b.Property<DateTime?>("updated_at")
                         .HasColumnType("datetime2");
 
@@ -376,9 +370,7 @@ namespace api.Migrations
 
                     b.HasKey("id");
 
-                    b.HasIndex("recipe_id");
-
-                    b.ToTable("shopping_list", (string)null);
+                    b.ToTable("shopping_list");
                 });
 
             modelBuilder.Entity("api.Models.Unit_Measurement", b =>
@@ -401,7 +393,7 @@ namespace api.Migrations
 
                     b.HasKey("id");
 
-                    b.ToTable("unit_measurement", (string)null);
+                    b.ToTable("Unit_Measurements");
                 });
 
             modelBuilder.Entity("api.Models.User", b =>
@@ -564,15 +556,15 @@ namespace api.Migrations
 
             modelBuilder.Entity("api.Models.Recipe_Ingredient", b =>
                 {
-                    b.HasOne("api.Models.Recipe", "Recipe")
-                        .WithMany("Recipe_Ingredients")
-                        .HasForeignKey("RecipeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("api.Models.Ingredient", "Ingredient")
                         .WithMany()
                         .HasForeignKey("ingredient_id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("api.Models.Recipe", "Recipe")
+                        .WithMany("Recipe_Ingredients")
+                        .HasForeignKey("recipe_id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -587,17 +579,6 @@ namespace api.Migrations
                     b.Navigation("Recipe");
 
                     b.Navigation("Unit_Measurement");
-                });
-
-            modelBuilder.Entity("api.Models.ShoppingList", b =>
-                {
-                    b.HasOne("api.Models.Recipe", "Recipe")
-                        .WithMany()
-                        .HasForeignKey("recipe_id")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Recipe");
                 });
 
             modelBuilder.Entity("api.Models.User_Allergy", b =>
