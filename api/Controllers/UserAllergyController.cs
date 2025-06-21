@@ -15,7 +15,7 @@ namespace api.Controllers
 {
   [Route("api/user_allergy")]
   [ApiController]
-  //[Authorize] 
+  [Authorize] 
   public class UserAllergyController : ControllerBase
   {
     private readonly ApplicationDBContext _context;

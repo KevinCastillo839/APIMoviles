@@ -7,9 +7,9 @@ namespace api.Models
     public class Recipe_Allergy
     {
         public int id { get; set; }
-        public int recipe_id { get; set; }  // Relación con Recipe
+        public int recipe_id { get; set; }  
         [ForeignKey("recipe_id")]
-        public Recipe Recipe { get; set; }  // Relación con Recipe
+        public Recipe Recipe { get; set; }  
         public int allergy_id { get; set; }  
         [ForeignKey("allergy_id")]
         public Allergy Allergy { get; set; }  
