@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using api.Models;
 using Api.Models;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore; // This is required for DbSet<>
 
 namespace api.Data
 {
@@ -27,7 +27,7 @@ namespace api.Data
             modelBuilder.Entity<Recipe_Ingredient>()
                 .HasOne(ri => ri.Recipe)
                 .WithMany(r => r.Recipe_Ingredients)
-                .HasForeignKey(ri => ri.recipe_id);  // Usa recipe_id como clave foránea
+                .HasForeignKey(ri => ri.RecipeId);  // Usa recipe_id como clave foránea
 
             modelBuilder.Entity<Menu_Recipes>()
                  .HasOne(mr => mr.Menu)
@@ -123,6 +123,7 @@ namespace api.Data
         public DbSet<User_Dietary_Restriction> User_Dietary_Restrictions { get; set; }
         public DbSet<User_Dietary_Goal> User_Dietary_Goals { get; set; }
         public DbSet<UserPreference> UserPreferences { get; set; }
+        public DbSet<Unit_Measurement> unit_measurement { get; set; }
 
 
     }

@@ -393,7 +393,7 @@ public async Task<IActionResult> GetLatestWeeklyMenuTable(int userId)
                         recipe_ingredients = mr.Recipe.Recipe_Ingredients.Select(ri => new
                         {
                             id = ri.id,
-                            recipe_id = ri.recipe_id,
+                            recipe_id = ri.RecipeId,
                             ingredient_id = ri.ingredient_id,
                             quantity = ri.quantity,
                             ingredient = new
@@ -506,17 +506,16 @@ public async Task<IActionResult> GenerateWeeklyMenu(int user_id)
 
         // 7. Create weekly menu for 7 days
         var random = new Random();
-        string[] daysOfWeek = { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday" };
+        string[] daysOfWeek = { "Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sábado", "Domingo" };
 
         for (int i = 0; i < 7; i++)
         {
             // Pick 3 random distinct recipes
             var selectedRecipes = validRecipes.OrderBy(x => random.Next()).Take(3).ToList();
-
             var menu = new Menu
             {
-                name = $"Menu Day {i + 1}",
-                description = "Menu designed to support your nutritional goals",
+                name = $"Menú del {daysOfWeek[i].ToLower()}",
+                description = "Menú diseñado para apoyar tus objetivos nutricionales.",
                 day_of_week = daysOfWeek[i],
                 created_at = DateTime.UtcNow,
                 user_id = user_id,
@@ -527,6 +526,7 @@ public async Task<IActionResult> GenerateWeeklyMenu(int user_id)
                     updated_at = DateTime.UtcNow
                 }).ToList()
             };
+
 
             _context.Menu.Add(menu);
             await _context.SaveChangesAsync(); // Get menu ID

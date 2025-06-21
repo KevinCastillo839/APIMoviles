@@ -96,9 +96,6 @@ namespace api.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("id"));
 
-                    b.Property<int?>("Userid")
-                        .HasColumnType("int");
-
                     b.Property<DateTime>("created_at")
                         .HasColumnType("datetime2");
 
@@ -106,8 +103,6 @@ namespace api.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("id");
-
-                    b.HasIndex("Userid");
 
                     b.HasIndex("user_id");
 
@@ -149,6 +144,9 @@ namespace api.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("id"));
 
+                    b.Property<int>("Recipeid")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("created_at")
                         .HasColumnType("datetime2");
 
@@ -164,6 +162,8 @@ namespace api.Migrations
                         .HasColumnType("datetime2");
 
                     b.HasKey("id");
+
+                    b.HasIndex("Recipeid");
 
                     b.ToTable("Ingredients");
                 });
@@ -201,7 +201,7 @@ namespace api.Migrations
 
                     b.HasIndex("user_id");
 
-                    b.ToTable("Menu");
+                    b.ToTable("menu");
                 });
 
             modelBuilder.Entity("api.Models.Preference", b =>
@@ -316,29 +316,92 @@ namespace api.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("id"));
 
+                    b.Property<int>("RecipeId")
+                        .HasColumnType("int")
+                        .HasColumnName("recipe_id");
+
+                    b.Property<DateTime>("created_at")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("created_at");
+
+                    b.Property<int>("ingredient_id")
+                        .HasColumnType("int")
+                        .HasColumnName("ingredient_id");
+
+                    b.Property<decimal>("quantity")
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("quantity");
+
+                    b.Property<int>("unit_measurement_id")
+                        .HasColumnType("int")
+                        .HasColumnName("unit_measurement_id");
+
+                    b.Property<DateTime>("updated_at")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("id");
+
+                    b.HasIndex("RecipeId");
+
+                    b.HasIndex("ingredient_id");
+
+                    b.HasIndex("unit_measurement_id");
+
+                    b.ToTable("Recipe_Ingredients");
+                });
+
+            modelBuilder.Entity("api.Models.ShoppingList", b =>
+                {
+                    b.Property<int>("id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("id"));
+
                     b.Property<DateTime>("created_at")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("ingredient_id")
+                    b.Property<int>("menu_id")
                         .HasColumnType("int");
-
-                    b.Property<string>("quantity")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("recipe_id")
                         .HasColumnType("int");
+
+                    b.Property<DateTime?>("updated_at")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("user_id")
+                        .HasColumnType("int");
+
+                    b.HasKey("id");
+
+                    b.HasIndex("recipe_id");
+
+                    b.ToTable("shopping_list", (string)null);
+                });
+
+            modelBuilder.Entity("api.Models.Unit_Measurement", b =>
+                {
+                    b.Property<int>("id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("id"));
+
+                    b.Property<DateTime>("created_at")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("updated_at")
                         .HasColumnType("datetime2");
 
                     b.HasKey("id");
 
-                    b.HasIndex("ingredient_id");
-
-                    b.HasIndex("recipe_id");
-
-                    b.ToTable("Recipe_Ingredients");
+                    b.ToTable("unit_measurement", (string)null);
                 });
 
             modelBuilder.Entity("api.Models.User", b =>
@@ -438,10 +501,6 @@ namespace api.Migrations
 
             modelBuilder.Entity("Api.Models.Weekly_Menu_Table", b =>
                 {
-                    b.HasOne("api.Models.User", null)
-                        .WithMany("Weekly_Menu_Tables")
-                        .HasForeignKey("Userid");
-
                     b.HasOne("api.Models.User", "User")
                         .WithMany()
                         .HasForeignKey("user_id")
@@ -449,6 +508,17 @@ namespace api.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("api.Models.Ingredient", b =>
+                {
+                    b.HasOne("api.Models.Recipe", "Recipe")
+                        .WithMany()
+                        .HasForeignKey("Recipeid")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Recipe");
                 });
 
             modelBuilder.Entity("api.Models.Menu", b =>
@@ -494,19 +564,38 @@ namespace api.Migrations
 
             modelBuilder.Entity("api.Models.Recipe_Ingredient", b =>
                 {
+                    b.HasOne("api.Models.Recipe", "Recipe")
+                        .WithMany("Recipe_Ingredients")
+                        .HasForeignKey("RecipeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("api.Models.Ingredient", "Ingredient")
                         .WithMany()
                         .HasForeignKey("ingredient_id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("api.Models.Recipe", "Recipe")
-                        .WithMany("Recipe_Ingredients")
-                        .HasForeignKey("recipe_id")
+                    b.HasOne("api.Models.Unit_Measurement", "Unit_Measurement")
+                        .WithMany()
+                        .HasForeignKey("unit_measurement_id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Ingredient");
+
+                    b.Navigation("Recipe");
+
+                    b.Navigation("Unit_Measurement");
+                });
+
+            modelBuilder.Entity("api.Models.ShoppingList", b =>
+                {
+                    b.HasOne("api.Models.Recipe", "Recipe")
+                        .WithMany()
+                        .HasForeignKey("recipe_id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Recipe");
                 });
@@ -543,11 +632,6 @@ namespace api.Migrations
             modelBuilder.Entity("api.Models.Recipe", b =>
                 {
                     b.Navigation("Recipe_Ingredients");
-                });
-
-            modelBuilder.Entity("api.Models.User", b =>
-                {
-                    b.Navigation("Weekly_Menu_Tables");
                 });
 #pragma warning restore 612, 618
         }
