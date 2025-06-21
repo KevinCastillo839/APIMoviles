@@ -18,6 +18,9 @@ namespace api.Models
         public List<Recipe_Ingredient> Recipe_Ingredients { get; set; } = new List<Recipe_Ingredient>();
         
 
+        public int? user_id { get; set; }
+        public User User { get; set; }
+
 
     }
 }

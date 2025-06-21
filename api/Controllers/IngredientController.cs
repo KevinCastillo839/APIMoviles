@@ -14,7 +14,7 @@ namespace api.Controllers
 {
   [Route("api/ingredient")]
   [ApiController]
-  [Authorize] 
+
   public class IngredientController : ControllerBase
   {
     private readonly ApplicationDBContext _context;

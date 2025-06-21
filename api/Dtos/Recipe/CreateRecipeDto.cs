@@ -9,16 +9,18 @@ namespace api.Dtos.Ingredient
 {
   public class CreateRecipeRequestDto
   {
-     
-        public string name { get; set; }
-        public string instructions { get; set; }
-        public string category { get; set; }
-        public int preparation_time { get; set; }
-        public IFormFile image { get; set; } 
-        public DateTime created_at { get; set; } = DateTime.UtcNow; // Evita valores fuera de rango
-         public DateTime? updated_at { get; set; } = null;
+
+    public string name { get; set; }
+    public string instructions { get; set; }
+    public string category { get; set; }
+    public int preparation_time { get; set; }
+    public IFormFile? image { get; set; }
+    public DateTime created_at { get; set; } = DateTime.UtcNow; // Evita valores fuera de rango
+    public DateTime? updated_at { get; set; } = null;
 
     [Required]
     public string Recipe_IngredientsJson { get; set; }
+         public int? user_id { get; set; }
+      
   }
 }

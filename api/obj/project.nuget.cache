@@ -1,6 +1,10 @@
 {
   "version": 2,
+<<<<<<< HEAD
   "dgSpecHash": "yYwK6o5CoT8=",
+=======
+  "dgSpecHash": "Uff+TV1evQg=",
+>>>>>>> origin/main
   "success": true,
   "projectFilePath": "C:\\UNIVERSIDAD NACIONAL\\Desarrollo Movil\\APIMoviles\\api\\api.csproj",
   "expectedPackageFiles": [

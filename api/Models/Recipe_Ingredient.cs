@@ -10,22 +10,11 @@ namespace api.Models
         [Column("recipe_id")]
         public int RecipeId { get; set; }
 
-        [ForeignKey("RecipeId")]
-        public Recipe Recipe { get; set; }
-
-        [Column("ingredient_id")]
-        public int ingredient_id { get; set; }
-
+        public int ingredient_id { get; set; }  // Clave foránea que hace referencia a Ingredient
+public int? unit_measurement_id { get; set; }
         [ForeignKey("ingredient_id")]
         public Ingredient Ingredient { get; set; }
 
-        [Column("unit_measurement_id")]
-        public int unit_measurement_id { get; set; }
-
-        [ForeignKey("unit_measurement_id")]
-        public Unit_Measurement Unit_Measurement { get; set; }
-
-        [Column("quantity")]
         public decimal quantity { get; set; }
 
         [Column("created_at")]
